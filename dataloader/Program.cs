@@ -45,10 +45,10 @@ namespace DataLoader
 
             var collection5 = database.GetCollection<RankingDetail>(typeof(RankingDetail).Name);
             collection5.RemoveAll();
-            collection5.Insert(new RankingDetail { RankingId = 1, PlayerId = 1, Estimate = 25, Rank = 1 });
-            collection5.Insert(new RankingDetail { RankingId = 1, PlayerId = 2, Estimate = 15, Rank = 7 });
-            collection5.Insert(new RankingDetail { RankingId = 1, PlayerId = 3, Estimate = 12, Rank = 9 });
-            collection5.Insert(new RankingDetail { RankingId = 1, PlayerId = 4, Estimate = 11, Rank = 19 });
+            collection5.Insert(new RankingDetail { Id = 1, RankingId = 1, PlayerId = 1, Estimate = 25, Rank = 1 });
+            collection5.Insert(new RankingDetail { Id = 2, RankingId = 1, PlayerId = 2, Estimate = 15, Rank = 7 });
+            collection5.Insert(new RankingDetail { Id = 3, RankingId = 1, PlayerId = 3, Estimate = 12, Rank = 9 });
+            collection5.Insert(new RankingDetail { Id = 4, RankingId = 1, PlayerId = 4, Estimate = 11, Rank = 19 });
 
         }
     }
