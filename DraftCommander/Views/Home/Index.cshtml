@@ -1,8 +1,36 @@
 ﻿@{
     ViewBag.Title = "Home Page";
 }
-
+<script type="text/javascript">
+    jQuery(document).ready(function () {
+        jQuery("#list").jqGrid({
+            url: '/Home/GridData/',
+            datatype: 'json',
+            mtype: 'GET',
+            colNames: ['Id', 'Position', 'Name', 'Team', 'Rank', 'Estimate'],
+            colModel: [
+          { name: 'Id', index: 'Id', width: 40, align: 'left' },
+          { name: 'Position', index: 'Pos', width: 40, align: 'left' },
+          { name: 'Name', index: 'Name', width: 200, align: 'left' },
+          { name: 'Team', index: 'Team', width: 50, align: 'left' },
+          { name: 'Rank', index: 'Rank', width: 50, align: 'left' },
+          { name: 'Estimate', index: 'Estimate', width: 50, align: 'left'}],
+            pager: jQuery('#pager'),
+            loadonce:true,
+            rowNum: 2000,
+            rowList: [20,30,50],
+            sortname: 'Id',
+            sortorder: "desc",
+            viewrecords: true,
+            imgpath: '/Content/themes/sunny/images',
+            caption: 'Players'
+        });
+    }); 
+</script>
 <h2>@ViewBag.Message</h2>
 <p>
     To learn more about ASP.NET MVC visit <a href="http://asp.net/mvc" title="ASP.NET MVC Website">http://asp.net/mvc</a>.
 </p>
+
+<table id="list" class="scroll" cellpadding="0" cellspacing="0"></table>
+<div id="pager" class="scroll" style="text-align:center;"></div>

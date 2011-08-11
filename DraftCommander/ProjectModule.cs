@@ -8,6 +8,7 @@ namespace DraftCommander
         protected override void Load(ContainerBuilder builder)
         {
             builder.RegisterModule( new RegistrationModule());
+            builder.RegisterModule(new Models.RegistrationModule());
         }
     }
 }

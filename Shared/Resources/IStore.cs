@@ -1,9 +1,9 @@
-﻿using MongoDB.Driver;
+﻿using System.Linq;
 
 namespace Resources
 {
     public interface IStore<T>
     {
-        MongoCollection<T> FindAll();
+        IQueryable<T> FindAll();
     }
 }

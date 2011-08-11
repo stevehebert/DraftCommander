@@ -1,19 +1,23 @@
-﻿using MongoDB.Driver;
+﻿using System.Linq;
+using MongoDB.Driver;
+using FluentMongo.Linq;
 using Resources;
 
 namespace DraftCommander.Data
 {
     public class StoreData<T> : IStore<T>
     {
-        private MongoDatabase _mongoDatabase;
+        private readonly MongoDatabase _mongoDatabase;
 
         public StoreData(MongoDatabase database)
         {
             _mongoDatabase = database;
         }
-        public MongoCollection<T> FindAll()
+
+        public IQueryable<T> FindAll()
         {
-            return _mongoDatabase.GetCollection<T>(typeof (T).Name);
+            
+            return _mongoDatabase.GetCollection<T>(typeof (T).Name).AsQueryable();
         }
     }
 }
