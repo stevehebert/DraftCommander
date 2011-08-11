@@ -13,12 +13,8 @@ namespace DataLoader
         {
             var server = MongoServer.Create("mongodb://steve.hebert:grandam@staff.mongohq.com:10040/openlocker_db");
             var database = server.GetDatabase("openlocker_db");
-            //server.GetDatabaseNames();
-            //foreach (var item in server.GetDatabaseNames())
-            //Console.Write(item);
-
             
-            var collection = database.GetCollection("Players");
+            var collection = database.GetCollection<Player>(typeof(Player).Name);
             
             foreach (var player in collection.FindAll().AsEnumerable())
                 Console.Write(player);
@@ -32,27 +28,27 @@ namespace DataLoader
             collection.Insert(new Player { Id = 5, Name = "Hebert, Bobby", Position = "QB", Team = "NO" });
 
 
-            collection = database.GetCollection("Auctions");
-            collection.RemoveAll();
-            collection.Insert(new Auction { Id = 1, Name = "EastSide" });
+            var collection2 = database.GetCollection<Auction>(typeof(Auction).Name);
+            collection2.RemoveAll();
+            collection2.Insert(new Auction { Id = 1, Name = "EastSide" });
 
-            collection = collection.Database.GetCollection("Owners");
-            collection.RemoveAll();
-            collection.Insert(new Owner { AuctionId = 1, Id = 1, Name = "Sponge Bobs" });
-            collection.Insert(new Owner { AuctionId = 1, Id = 2, Name = "Prom Queens" });
-            collection.Insert(new Owner { AuctionId = 1, Id = 3, Name = "Terminators" });
+            var collection3 = database.GetCollection<Owner>(typeof(Owner).Name);
+            collection3.RemoveAll();
+            collection3.Insert(new Owner { AuctionId = 1, Id = 1, Name = "Sponge Bobs" });
+            collection3.Insert(new Owner { AuctionId = 1, Id = 2, Name = "Prom Queens" });
+            collection3.Insert(new Owner { AuctionId = 1, Id = 3, Name = "Terminators" });
 
 
-            collection = collection.Database.GetCollection("Rankings");
-            collection.RemoveAll();
-            collection.Insert(new Ranking { Id = 1, Name = "Fanball - 10 player" });
+            var collection4 = database.GetCollection<Ranking>(typeof(Ranking).Name);
+            collection4.RemoveAll();
+            collection4.Insert(new Ranking { Id = 1, Name = "Fanball - 10 player" });
 
-            collection = collection.Database.GetCollection("RankingDetails");
-            collection.RemoveAll();
-            collection.Insert(new RankingDetail { RankingId = 1, PlayerId = 1, Estimate = 25, Rank = 1 });
-            collection.Insert(new RankingDetail { RankingId = 1, PlayerId = 2, Estimate = 15, Rank = 7 });
-            collection.Insert(new RankingDetail { RankingId = 1, PlayerId = 3, Estimate = 12, Rank = 9 });
-            collection.Insert(new RankingDetail { RankingId = 1, PlayerId = 4, Estimate = 11, Rank = 19 });
+            var collection5 = database.GetCollection<RankingDetail>(typeof(RankingDetail).Name);
+            collection5.RemoveAll();
+            collection5.Insert(new RankingDetail { RankingId = 1, PlayerId = 1, Estimate = 25, Rank = 1 });
+            collection5.Insert(new RankingDetail { RankingId = 1, PlayerId = 2, Estimate = 15, Rank = 7 });
+            collection5.Insert(new RankingDetail { RankingId = 1, PlayerId = 3, Estimate = 12, Rank = 9 });
+            collection5.Insert(new RankingDetail { RankingId = 1, PlayerId = 4, Estimate = 11, Rank = 19 });
 
         }
     }
