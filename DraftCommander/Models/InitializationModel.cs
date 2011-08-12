@@ -19,8 +19,9 @@ namespace DraftCommander.Models
         public JsonResult GetData(Func<object, JsonRequestBehavior, JsonResult> jsonProcessor)
         {
             var items = from p in _playerCollection.AsQueryable()
-                        join o in _rankingCollection.AsQueryable() on p.Id equals o.PlayerId
-                        select new {p.Id, p.Position, p.Name, p.Team, o.Rank, o.Estimate};
+                        join o in _rankingCollection.AsQueryable() on p.Id equals o.PlayerId into outer
+                        from o in outer.DefaultIfEmpty()
+                        select new { p.Id, p.Position, p.Name, p.Team, Rank = ((o != null ? new int?(o.Rank) : null)), Estimate = (o != null ? new int?(o.Estimate) : null) };
             
              
             var rankingId = 1;
@@ -47,14 +48,14 @@ namespace DraftCommander.Models
             return jsonProcessor(jsonData, JsonRequestBehavior.AllowGet);
         }
 
-
-        private int GetRank(int rankingId, int playerId, Func<RankingDetail, int> rankingDetailOperation)
+        public IEnumerable<KeyValuePair<int, string>> PlayerList
         {
-            var item =
-                _rankingCollection.Where(p => p.RankingId == rankingId && p.PlayerId == playerId).
-                    FirstOrDefault();
-
-            return item != null ? rankingDetailOperation(item) : 0;
+            get
+            {
+                return from p in _playerCollection.AsQueryable()
+                       orderby p.Name
+                       select new KeyValuePair<int, string>(p.Id, p.Name);
+            }
         }
 
     }

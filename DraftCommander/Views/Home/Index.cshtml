@@ -1,4 +1,5 @@
-﻿@{
+﻿@model DraftCommander.Models.InitializationModel
+@{
     ViewBag.Title = "Home Page";
 }
 <script type="text/javascript">
@@ -16,21 +17,64 @@
           { name: 'Rank', index: 'Rank', width: 50, align: 'left' },
           { name: 'Estimate', index: 'Estimate', width: 50, align: 'left'}],
             pager: jQuery('#pager'),
-            loadonce:true,
+            loadonce: true,
             rowNum: 2000,
-            rowList: [20,30,50],
+            rowList: [20, 30, 50],
             sortname: 'Id',
             sortorder: "desc",
             viewrecords: true,
             imgpath: '/Content/themes/sunny/images',
             caption: 'Players'
         });
+        $('.chzn-select').chosen();
+        $('#bid-setter').click(function () {
+            alert($('#admin-select').val());
+            alert($('#bid-value').val());
+            PUBNUB.publish({
+                channel: 'activity',
+                message: { 'type': 'bid-set',
+                    'value': $('#bid-value').val(),
+                    'player': $('#admin-select').val()
+                }
+            });
+        });
+
+        PUBNUB.subscribe({
+            channel: 'activity',
+            callback: function (message) {
+                var ret = jQuery("#list").jqGrid('getRowData', message.player);
+                $('#player-under-bid').html(ret.Name);
+                $('#player-bid').html(message.value);
+            }
+        });
     }); 
 </script>
 <h2>@ViewBag.Message</h2>
+<table id="list" class="scroll" cellpadding="0" cellspacing="0">
+</table>
+<div id="pager" class="scroll" style="text-align: center;">
+</div>
+<br />
 <p>
-    To learn more about ASP.NET MVC visit <a href="http://asp.net/mvc" title="ASP.NET MVC Website">http://asp.net/mvc</a>.
+<h2>
+Active Bid
+</h2>
+Current Player: <div id='player-under-bid'></div>
+Bid Amount: <div id='player-bid'></div>
 </p>
 
-<table id="list" class="scroll" cellpadding="0" cellspacing="0"></table>
-<div id="pager" class="scroll" style="text-align:center;"></div>
+<div id="admin">
+    Auction Control </br>
+    <select data-placeholder="Choose a Player..." class="chzn-select" id='admin-select'
+        style="width: 350px;">
+        <option value=""></option>
+        @foreach (var item in Model.PlayerList)
+        {
+            <option value="@item.Key">@item.Value</option> 
+        }
+    </select>
+    <br />
+    Bid Amount:
+    <input type="text" id='bid-value' />
+    <input type='button' id='bid-setter' value='Set Current Bid' />
+</div>

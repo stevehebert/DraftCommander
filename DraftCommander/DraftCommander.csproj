@@ -90,6 +90,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Content\chosen\chosen-sprite.png" />
+    <Content Include="Content\chosen\chosen.css" />
     <Content Include="Content\ellipsis-xbl.xml" />
     <Content Include="Content\themes\sunny\images\ui-bg_diagonals-medium_20_d34d17_40x40.png" />
     <Content Include="Content\themes\sunny\images\ui-bg_flat_30_cccccc_40x100.png" />
@@ -110,6 +112,7 @@
     <Content Include="Content\themes\sunny\jquery-ui-1.8.15.custom.css" />
     <Content Include="Content\ui.jqgrid.css" />
     <Content Include="Global.asax" />
+    <Content Include="Scripts\chosen.jquery.min.js" />
     <Content Include="Scripts\i18n\grid.locale-ar.js" />
     <Content Include="Scripts\i18n\grid.locale-bg.js" />
     <Content Include="Scripts\i18n\grid.locale-bg1251.js" />

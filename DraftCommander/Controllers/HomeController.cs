@@ -17,9 +17,9 @@ namespace DraftCommander.Controllers
         {
             var count = 5;
 
-            ViewBag.Message = string.Format("Welcome to ASP.NET MVC! with {0} players", count);
+            ViewBag.Message = string.Format("Welcome to DraftCommander with {0} players", count);
 
-            return View();
+            return View(_initializationModel);
         }
 
         public ActionResult About()
