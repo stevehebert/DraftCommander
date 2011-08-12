@@ -28,8 +28,6 @@
         });
         $('.chzn-select').chosen();
         $('#bid-setter').click(function () {
-            alert($('#admin-select').val());
-            alert($('#bid-value').val());
             PUBNUB.publish({
                 channel: 'activity',
                 message: { 'type': 'bid-set',
@@ -56,13 +54,16 @@
 </div>
 <br />
 <p>
-<h2>
-Active Bid
-</h2>
-Current Player: <div id='player-under-bid'></div>
-Bid Amount: <div id='player-bid'></div>
+    <h2>
+        Active Bid
+    </h2>
+    Current Player:
+    <div id='player-under-bid'>
+    </div>
+    Bid Amount:
+    <div id='player-bid'>
+    </div>
 </p>
-
 <div id="admin">
     Auction Control </br>
     <select data-placeholder="Choose a Player..." class="chzn-select" id='admin-select'
