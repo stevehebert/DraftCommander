@@ -1,0 +1,26 @@
+<mockup version="1.0" skin="sketch" measuredW="1099" measuredH="612" mockupW="1058" mockupH="586">
+  <controls>
+    <control controlID="0" controlTypeID="com.balsamiq.mockups::TabBar" x="41" y="26" w="1058" h="507" measuredW="202" measuredH="100" zOrder="0" locked="false" isInGroup="-1">
+      <controlProperties>
+        <selectedIndex>0</selectedIndex>
+        <text>Players%2C%20Teams</text>
+      </controlProperties>
+    </control>
+    <control controlID="1" controlTypeID="com.balsamiq.mockups::DataGrid" x="72" y="77" w="954" h="417" measuredW="492" measuredH="88" zOrder="1" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>Position%2C%20Player%2C%20Team%2C%20Rank%2C%20Estimate%2C%20Owner%2C%20Price%0AQB%2C%20Aaron%20Rodgers%2C%20GBP%2C%201%2C%2030%2C%20Sponge%20Bobs%2C%2031%0ARB%2C%20Adrian%20Peterson%2C%20MIN%2C%205%2C%2021%2C%20Prom%20Queens%2C%2020</text>
+      </controlProperties>
+    </control>
+    <control controlID="2" controlTypeID="com.balsamiq.mockups::Label" x="41" y="546" w="-1" h="-1" measuredW="247" measuredH="29" zOrder="2" locked="false" isInGroup="-1">
+      <controlProperties>
+        <size>16</size>
+        <text>Current%20Player%20being%20Auctioned</text>
+      </controlProperties>
+    </control>
+    <control controlID="3" controlTypeID="com.balsamiq.mockups::ButtonBar" x="41" y="581" w="-1" h="-1" measuredW="225" measuredH="31" zOrder="3" locked="false" isInGroup="-1">
+      <controlProperties>
+        <text>Aaron%20Rodgers%2C%20QB%2C%20GBP</text>
+      </controlProperties>
+    </control>
+  </controls>
+</mockup>
