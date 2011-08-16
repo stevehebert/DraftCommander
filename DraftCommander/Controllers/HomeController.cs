@@ -1,4 +1,5 @@
-﻿using System.Web.Mvc;
+﻿using System.Threading;
+using System.Web.Mvc;
 using DraftCommander.Models;
 
 namespace DraftCommander.Controllers
@@ -30,6 +31,17 @@ namespace DraftCommander.Controllers
         public JsonResult GridData(string sidx, string sord, int page, int rows)
         {
             return _initializationModel.GetData(Json);
+        }
+
+        public JsonResult OwnerData(string idx, string sord, int page, int rows)
+        {
+            return _initializationModel.GetOwnerData(Json);
+        }
+
+        public JsonResult BidDetail(int auctionId)
+        {
+            Thread.Sleep(500);
+            return _initializationModel.GetBidData(auctionId, o => Json(o, JsonRequestBehavior.AllowGet));
         }
     }
 }

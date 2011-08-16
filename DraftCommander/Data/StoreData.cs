@@ -1,6 +1,9 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using MongoDB.Driver;
 using FluentMongo.Linq;
+using MongoDB.Driver.Builders;
 using Resources;
 
 namespace DraftCommander.Data
@@ -18,6 +21,17 @@ namespace DraftCommander.Data
         {
             
             return _mongoDatabase.GetCollection<T>(typeof (T).Name).AsQueryable();
+        }
+
+        public IEnumerable<T> Query(IMongoQuery mongoQuery )
+        {
+            return _mongoDatabase.GetCollection<T>(typeof (T).Name).Find(mongoQuery).AsEnumerable();
+        }
+
+        public IEnumerable<T> Where(Func<T, bool> predicate)
+        {
+            return _mongoDatabase.GetCollection<T>(typeof (T).Name).AsQueryable().Where(predicate);
+
         }
     }
 }

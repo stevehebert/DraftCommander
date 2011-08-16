@@ -2,20 +2,26 @@
 @{
     ViewBag.Title = "Home Page";
 }
+
+<script language="javascript" src="@Url.Content("~/Scripts/auction-script.js")" type="text/javascript"></script>
+
 <script type="text/javascript">
     jQuery(document).ready(function () {
+        jQuery('#tabs11').tabs();
         jQuery("#list").jqGrid({
             url: '/Home/GridData/',
             datatype: 'json',
             mtype: 'GET',
-            colNames: ['Id', 'Position', 'Name', 'Team', 'Rank', 'Estimate'],
+            colNames: ['Id', 'Position', 'Name', 'Team', 'Rank', 'Estimate', 'Owner', 'BidAmount'],
             colModel: [
           { name: 'Id', index: 'Id', width: 40, align: 'left' },
-          { name: 'Position', index: 'Pos', width: 40, align: 'left' },
+          { name: 'Position', index: 'Position', width: 40, align: 'left' },
           { name: 'Name', index: 'Name', width: 200, align: 'left' },
           { name: 'Team', index: 'Team', width: 50, align: 'left' },
           { name: 'Rank', index: 'Rank', width: 50, align: 'left' },
-          { name: 'Estimate', index: 'Estimate', width: 50, align: 'left'}],
+          { name: 'Estimate', index: 'Estimate', width: 50, align: 'left' },
+          { name: 'Owner', index: 'Owner', width: 100, align: 'left' },
+          { name: 'BidAmount', index: 'BidAmount', width: 50, align: 'right'}],
             pager: jQuery('#pager'),
             loadonce: true,
             rowNum: 2000,
@@ -26,6 +32,31 @@
             imgpath: '/Content/themes/sunny/images',
             caption: 'Players'
         });
+
+        jQuery("#ownerlist").jqGrid({
+            url: '/Home/OwnerData/',
+            datatype: 'json',
+            mtype: 'GET',
+            colNames: ['Name', 'CurrentFunds', 'PlayersLeft', 'RequiredPlayers', 'NeededPlayers'],
+            colModel: [
+          { name: 'Name', index: 'Name', width: 200, align: 'left' },
+          { name: 'CurrentFunds', index: 'CurrentFunds', width: 50, align: 'left' },
+          { name: 'PlayersLeft', index: 'PlayersLeft', width: 50, align: 'left' },
+          { name: 'RequiredPlayers', index: 'RequiredPlayers', width: 50, align: 'left' },
+          { name: 'NeededPlayers', index: 'NeededPlayers', width: 50, align: 'left'}],
+            pager: jQuery('#ownerpager'),
+            loadonce: true,
+            rowNum: 2000,
+            rowList: [20, 30, 50],
+            width: 750,
+            sortname: 'Id',
+            sortorder: "desc",
+            height: "100%",
+            viewrecords: true,
+            imgpath: '/Content/themes/sunny/images',
+            caption: 'Owners'
+        });
+
         $('.chzn-select').chosen();
         $('#bid-setter').click(function () {
             PUBNUB.publish({
@@ -41,16 +72,32 @@
             channel: 'activity',
             callback: function (message) {
                 var ret = jQuery("#list").jqGrid('getRowData', message.player);
+                jQuery('#list').jqGrid('setSelection', message.player);
                 $('#player-under-bid').html(ret.Name);
                 $('#player-bid').html(message.value);
             }
         });
+
     }); 
 </script>
 <h2>@ViewBag.Message</h2>
-<table id="list" class="scroll" cellpadding="0" cellspacing="0">
-</table>
-<div id="pager" class="scroll" style="text-align: center;">
+<div id='tabs11'>
+    <ul>
+        <li><a href='#tabs-1'>Players</a></li>
+        <li><a href='#tabs-2'>Owners</a></li></ul>
+    <div id='tabs-1'>
+        <table id="list" class="scroll" cellpadding="0" cellspacing="0">
+        </table>
+        <div id="pager" class="scroll" style="text-align: center;">
+        </div>
+    </div>
+    <div id='tabs-2'>
+        <table id="ownerlist" class="scroll" cellpadding="0" cellspacing="0">
+        </table>
+        <div id="ownerpager" class="scroll" style="text-align: center;">
+        </div>
+       
+    </div>
 </div>
 <br />
 <p>

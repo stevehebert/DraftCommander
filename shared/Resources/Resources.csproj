@@ -48,6 +48,7 @@
   <ItemGroup>
     <Compile Include="Auction.cs" />
     <Compile Include="AuctionState.cs" />
+    <Compile Include="BidDetail.cs" />
     <Compile Include="IStore.cs" />
     <Compile Include="Owner.cs" />
     <Compile Include="Player.cs" />
