@@ -21,6 +21,28 @@ namespace DraftCommander.Models
             _bidCollection = bidCollection;
         }
 
+        public JsonResult GetAuctionRules(int auctionId, Func<object, JsonResult> jsonProcessor)
+        {
+            return
+                jsonProcessor(
+                    new
+                        {
+                            StartingFunds = 100,
+                            MinBid = 1,
+                            MinPlayerCount = 13,
+                            Positions = new[]
+                                            {
+                                                new {Position = "QB", Count = 1},
+                                                new {Position = "RB", Count = 2},
+                                                new {Position = "WR", Count = 2},
+                                                new {Position = "TE", Count = 1},
+                                                new {Position = "K", Count = 1},
+                                                new {Position = "DEF", Count = 1}
+                                            }
+
+                        });
+
+        }
 
         public JsonResult GetBidData(int auctionId, Func<object, JsonResult> jsonProcessor)
         {

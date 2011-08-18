@@ -1,26 +1,143 @@
 (function() {
-  var BidHandler, MessagePipeline, sam;
+  var BidHandler, HandlerBase, MessagePipeline, OwnerUpdateHandler, TeamRulesProcessor, sam;
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
+    for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
+    function ctor() { this.constructor = child; }
+    ctor.prototype = parent.prototype;
+    child.prototype = new ctor;
+    child.__super__ = parent.prototype;
+    return child;
+  };
+  TeamRulesProcessor = (function() {
+    TeamRulesProcessor.rules;
+    function TeamRulesProcessor(rules) {
+      var owner, _i, _j, _len, _len2, _ref;
+      this.rules = rules;
+      _ref = GetOwnerList();
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        owner = _ref[_i];
+        rules[owner] = rules.Positions.slice(0, rules.Positions.Length);
+      }
+      for (_j = 0, _len2 = rules.length; _j < _len2; _j++) {
+        owner = rules[_j];
+        owner.CurrentFunds = rules.StartingFunds;
+        owner.NeededPlayerCount = rules.MinPlayerCount;
+        owner.MaxBid(__bind(function() {
+          return this.CurrentFunds - (this.NeededPlayerCount(-1)) * rules.MinBid;
+        }, this));
+      }
+    }
+    TeamRulesProcessor.prototype.GetOwnerList = function() {
+      var list;
+      list = jQuery('#ownerlist');
+      return list.jqGrid('getDataIDs');
+    };
+    TeamRulesProcessor.prototype.ProcessBid = function(ownerId, bidAmount, position) {
+      var ownerInfo, positionInfo, set, summary, _i, _len, _ref;
+      ownerInfo = this.rules[ownerId];
+      ownerInfo.CurrentFunds -= bidAmount;
+      ownerInfo.NeededPlayerCount -= 1;
+      _ref = ownerInfo.Positions;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        positionInfo = _ref[_i];
+        if (positionInfo.Position === position) {
+          positionInfo.Count -= 1;
+        }
+      }
+      summary = this.CreateSummary(rules[ownerId]);
+      return set = {
+        CurrentFunds: ownerInfo.CurrentFunds,
+        NeededPlayerCount: ownerInfo.NeededPlayerCount,
+        MaxBix: ownerInfo.MaxBid
+      };
+    };
+    TeamRulesProcessor.prototype.CreateSummary = function(ownerInfo) {
+      var position, positionSummary, _i, _len, _ref;
+      if (ownerInfo.NeededPlayerCount < 1) {
+        return '<< Auction Complete >>';
+      }
+      positionSummary = '';
+      _ref = ownerInfo.Positions;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        position = _ref[_i];
+        if (positionInfo.Count > 0) {
+          if (positionSummary.length > 0) {
+            positionSummary += ', ';
+          }
+          positionSummary += position.Count + ' ' + position.Position;
+          if (positionSummary.Length === 0) {
+            positionSummary = '<< All Required Positions Filled >>';
+          }
+        }
+      }
+      return positionSummary;
+    };
+    return TeamRulesProcessor;
+  })();
+  HandlerBase = (function() {
+    function HandlerBase() {}
+    HandlerBase.prototype.GetOwnerData = function(ownerId) {
+      var list;
+      list = jQuery('#ownerlist');
+      return list.jqGrid('getRowData', ownerId);
+    };
+    HandlerBase.prototype.SaveOwnerData = function(ownerId, data) {
+      var list;
+      list = jQuery('#ownerlist');
+      return list.jqGrid('setRowData', ownerId, data);
+    };
+    HandlerBase.prototype.GetPlayerData = function(playerId) {
+      var list;
+      list = jQuery('#list');
+      return list.jqGrid('getRowData', playerId);
+    };
+    HandlerBase.prototype.SavePlayerData = function(playerId, data) {
+      var list;
+      list = jQuery('#list');
+      return list.jqGrid('setRowData', playerId, data);
+    };
+    return HandlerBase;
+  })();
+  OwnerUpdateHandler = (function() {
+    __extends(OwnerUpdateHandler, HandlerBase);
+    function OwnerUpdateHandler() {
+      OwnerUpdateHandler.__super__.constructor.apply(this, arguments);
+    }
+    OwnerUpdateHandler.prototype.CanProcess = function(message) {
+      return message.type === 'BID';
+    };
+    OwnerUpdateHandler.prototype.Process = function(message) {
+      var ret;
+      ret = this.GetOwnerData(message.OwnerId);
+      ret.CurrentFunds = ret.CurrentFunds - message.BidAmount;
+      if (message.BidAmount === 0) {
+        ret.PlayersLeft += 1;
+      } else {
+        ret.PlayersLeft -= 1;
+      }
+      return this.SaveOwnerData(message.OwnerId, ret);
+    };
+    return OwnerUpdateHandler;
+  })();
   BidHandler = (function() {
-    function BidHandler() {}
+    __extends(BidHandler, HandlerBase);
+    function BidHandler() {
+      BidHandler.__super__.constructor.apply(this, arguments);
+    }
     BidHandler.prototype.CanProcess = function(message) {
       return message.type === 'BID';
     };
     BidHandler.prototype.GetOwnerName = function(message) {
-      var list, ret;
-      list = jQuery('#ownerlist');
-      ret = list.jqGrid('getRowData', message.OwnerId);
-      alert(ret.Name);
-      return ret.Name;
+      return this.GetOwnerData(message.OwnerId).Name;
     };
     BidHandler.prototype.Process = function(message) {
-      var list, name, ret;
+      var name, ret, _ref;
       name = this.GetOwnerName(message);
-      list = jQuery('#list');
-      alert(message.PlayerId);
-      ret = list.jqGrid('getRowData', message.PlayerId);
+      ret = this.GetPlayerData(message.PlayerId);
       ret.Owner = name;
+      message.OldBid = ret.BidAmount === '' ? 0 : parseInt((_ref = ret.BidAmount) != null ? _ref : 0);
       ret.BidAmount = message.BidAmount;
-      return list.jqGrid('setRowData', message.PlayerId, ret);
+      return this.SavePlayerData(message.PlayerId, ret);
     };
     return BidHandler;
   })();
@@ -28,16 +145,13 @@
     MessagePipeline.messages;
     MessagePipeline.handlers;
     function MessagePipeline() {
-      var bidHandler;
       this.messages = [];
       this.handlers = [];
-      bidHandler = new BidHandler();
-      this.handlers.push(bidHandler);
+      this.handlers.push(new BidHandler());
+      this.handlers.push(new OwnerUpdateHandler());
     }
     MessagePipeline.prototype.Process = function(message) {
       var handler, _i, _len, _ref, _results;
-      alert('bid came in');
-      alert(message.type);
       if (message.type === 'BID') {
         _ref = this.handlers;
         _results = [];

@@ -2,9 +2,7 @@
 @{
     ViewBag.Title = "Home Page";
 }
-
 <script language="javascript" src="@Url.Content("~/Scripts/auction-script.js")" type="text/javascript"></script>
-
 <script type="text/javascript">
     jQuery(document).ready(function () {
         jQuery('#tabs11').tabs();
@@ -57,6 +55,8 @@
             caption: 'Owners'
         });
 
+        jQuery("#bidcenter").accordion();
+
         $('.chzn-select').chosen();
         $('#bid-setter').click(function () {
             PUBNUB.publish({
@@ -96,33 +96,35 @@
         </table>
         <div id="ownerpager" class="scroll" style="text-align: center;">
         </div>
-       
     </div>
 </div>
 <br />
-<p>
-    <h2>
-        Active Bid
-    </h2>
-    Current Player:
-    <div id='player-under-bid'>
+<div id='bidcenter'>
+    <h3>
+        <a href='#'>Active Bid</a></h3>
+    <div>
+        Current Player:
+        <div id='player-under-bid'>
+        </div>
+        Bid Amount:
+        <div id='player-bid'>
+        </div>
     </div>
-    Bid Amount:
-    <div id='player-bid'>
+    <h3>
+        <a href='#'>Auction Command</a></h3>
+    <div id="admin">
+        Auction Control </br>
+        <select data-placeholder="Choose a Player..." class="chzn-select" id='admin-select'
+            style="width: 350px;">
+            <option value=""></option>
+            @foreach (var item in Model.PlayerList)
+            {
+                <option value="@item.Key">@item.Value</option> 
+            }
+        </select>
+        <br />
+        Bid Amount:
+        <input type="text" id='bid-value' />
+        <input type='button' id='bid-setter' value='Set Current Bid' />
     </div>
-</p>
-<div id="admin">
-    Auction Control </br>
-    <select data-placeholder="Choose a Player..." class="chzn-select" id='admin-select'
-        style="width: 350px;">
-        <option value=""></option>
-        @foreach (var item in Model.PlayerList)
-        {
-            <option value="@item.Key">@item.Value</option> 
-        }
-    </select>
-    <br />
-    Bid Amount:
-    <input type="text" id='bid-value' />
-    <input type='button' id='bid-setter' value='Set Current Bid' />
 </div>

@@ -43,5 +43,10 @@ namespace DraftCommander.Controllers
             Thread.Sleep(500);
             return _initializationModel.GetBidData(auctionId, o => Json(o, JsonRequestBehavior.AllowGet));
         }
+
+        public JsonResult AuctionRules(int auctionId)
+        {
+            return _initializationModel.GetAuctionRules(auctionId, o => Json(o, JsonRequestBehavior.AllowGet));
+        }
     }
 }
