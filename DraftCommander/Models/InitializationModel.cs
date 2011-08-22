@@ -66,7 +66,9 @@ namespace DraftCommander.Models
                                          type = "LOAD",
                                          PlayerData = GetPlayerRows(auctionId),
                                          OwnerData = GetOwnerRows(auctionId),
-                                         AuctionRules = GetAuctionRules(auctionId)
+                                         AuctionRules = GetAuctionRules(auctionId),
+                                         BidHistory = from p in _bidCollection.Where(p => p.AuctionId == auctionId)
+                                                      select new {type = "BID", p.OwnerId, p.PlayerId, p.BidAmount}
                                      });
         }
 

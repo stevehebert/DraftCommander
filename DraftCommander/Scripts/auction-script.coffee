@@ -1,52 +1,3 @@
-class TeamRulesProcessor
-  @rules
-
-  GetOwnerList: ->
-    list = jQuery '#ownerlist'
-    list.jqGrid 'getDataIDs'
-
-
-  constructor: (rules) ->
-    @rules = rules
-    
-    owners = @GetOwnerList()
-    alert owners.length 
-
-    for owner in owners
-      @rules[owner] = @rules.Positions.slice(0, rules.Positions.Length) for owner in owners
-      owner.CurrentFunds = @rules.StartingFunds
-      owner.NeededPlayerCount = @rules.MinPlayerCount
-      # gotta watch this next line
-      owner.MaxBid => @CurrentFunds - (@NeededPlayerCount -1) * @rules.MinBid
-
-
-  ProcessBid: (ownerId, bidAmount, position) ->
-    ownerInfo = @rules[ownerId]
-    ownerInfo.CurrentFunds -= bidAmount
-    ownerInfo.NeededPlayerCount -= 1
-    positionInfo.Count -= 1 for positionInfo in ownerInfo.Positions when positionInfo.Position == position
-    summary = @CreateSummary rules[ownerId]
-    
-    set =
-      CurrentFunds: ownerInfo.CurrentFunds
-      NeededPlayerCount: ownerInfo.NeededPlayerCount
-      MaxBix: ownerInfo.MaxBid
-
-  CreateSummary: (ownerInfo) ->
-    if ownerInfo.NeededPlayerCount < 1
-      return '<< Auction Complete >>'
-    
-    positionSummary = ''
-    for position in ownerInfo.Positions when positionInfo.Count > 0
-      if positionSummary.length > 0
-        positionSummary += ', '
-      positionSummary += position.Count + ' ' + position.Position
-
-      if positionSummary.Length == 0
-        positionSummary = '<< All Required Positions Filled >>'
-    
-    return positionSummary;
-
 class HandlerBase
   GetOwnerData: (ownerId) ->
     list = jQuery '#ownerlist'
@@ -75,16 +26,70 @@ class PlayerLoadHandler
     grid = jQuery '#list'
     @ProcessRecord(grid, record) for record in message.PlayerData
 
+
+class OwnerRecord
+  @Id
+  @Name
+  @CurrentFunds
+  @PlayersLeft
+  @RequiredPlayers
+  @NeededPlayers
+  @Positions
+
+  @AuctionRules
+
+  constructor: (auctionRules, record) ->
+    @AuctionRules = auctionRules
+    @Id = record.Id
+    @Name = record.OwnerRow.Name
+    @CurrentFunds = auctionRules.StartingFunds
+    @PlayersLeft = auctionRules.MinPlayerCount
+    @Positions = auctionRules.Positions.slice(0, auctionRules.Positions.length)
+
+    @RequiredPlayers = @CalculateRequiredPlayers()
+    @NeededPlayers = @CalculateNeededPlayers()
+
+  CalculateRequiredPlayers: () ->
+    count = 0
+    for record in @Positions when record.Count > 0
+      count = count + record.Count
+
+    return count
+
+  CalculateNeededPlayers: () ->
+    neededPlayers = ''
+    for position in @AuctionRules.Positions when position.Count > 0
+      if neededPlayers.length > 0
+        neededPlayers += ', '
+      neededPlayers += position.Count + ' ' + position.Position
+      
+    if neededPlayers == ''
+      neededPlayers = '<< All Required Positions Filled >>'
+      
+    return neededPlayers
+  
+  ProcessBid: (message) ->
+    @CurrentFunds -= message.BidAmount
+    # record other stuff here
+
 class OwnerLoadHandler
+  @OwnerData = []
+  @AuctionRules
+
   CanProcess: (message) ->
     message.type == 'LOAD'
 
   ProcessRecord: (grid, record) ->
-    grid.jqGrid 'addRowData', record.Id, record.OwnerRow
+    newRecord = new OwnerRecord(@AuctionRules, record)
+    @OwnerData[newRecord.Id] = newRecord
+      
+    grid.jqGrid 'addRowData', newRecord.Id, newRecord
 
   Process: (message) ->
+    @AuctionRules = message.AuctionRules
+    @OwnerData = []
+    
     grid = jQuery '#ownerlist'
-    alert message.OwnerData.length
     @ProcessRecord(grid, record) for record in message.OwnerData
 
 class AuctionRuleLoadHandler
@@ -95,27 +100,34 @@ class AuctionRuleLoadHandler
 
   Process: (message) ->
     @AuctionRules = message.AuctionRules
-    alert @AuctionRules.StartingFunds
+
+class BidLoadHandler
+  @pipeline
+
+  constructor: (pipeline) ->
+    @pipeline = pipeline
+
+  CanProcess: (message) ->
+    message.type == 'LOAD'
+
+  Process: (message) ->
+    @pipeline.Process(bid) for bid in message.BidHistory
+
 
 class OwnerUpdateHandler extends HandlerBase
-  @teamRules
+  @ownerInfo
 
-  constructor: (rules) ->
-    @teamRules = rules
+  constructor: (ownerInfo) ->
+    @ownerInfo = ownerInfo
 
   CanProcess: (message) ->
     message.type == 'BID'
 
   Process: (message) ->
-    ret = @GetOwnerData(message.OwnerId)
-    ret.CurrentFunds = ret.CurrentFunds - message.BidAmount
+    ownerData = @ownerInfo.OwnerData[message.OwnerId]
+    ownerData.ProcessBid(message)
 
-    if message.BidAmount == 0
-      ret.PlayersLeft += 1
-    else
-      ret.PlayersLeft -= 1
-
-    @SaveOwnerData(message.OwnerId, ret)
+    @SaveOwnerData(message.OwnerId, ownerData)
 
 class BidHandler extends HandlerBase
   CanProcess: (message) ->
@@ -140,25 +152,23 @@ class MessagePipeline
     @messages = []
     @handlers = []
     @AddHandler new PlayerLoadHandler()
-    @AddHandler new OwnerLoadHandler()
+    loadHandler = @AddHandler( new OwnerLoadHandler() )
     @AddHandler new AuctionRuleLoadHandler()
+    @AddHandler new BidLoadHandler(this)
     @AddHandler new BidHandler()
-    @AddHandler new OwnerUpdateHandler()
+    @AddHandler new OwnerUpdateHandler(loadHandler)
 
   AddHandler: (handler) ->
     @handlers.push handler
+    return handler
 
   Process: (message) ->
     handler.Process(message) for handler in @handlers when handler.CanProcess(message)
-
-  GetHistory: ->	
-    jQuery.ajax url:'/home/BidDetail', dataType: 'json', data: 'auctionId=1', context:this, success: (data) ->
-      @Process record for record in data.records when record.type == 'BID'
 
 sam = new MessagePipeline()
 
 jQuery.ajax url:'/home/AuctionBigGulp', dataType:'json', data:'auctionId=1', success: (data) ->
   sam.Process data
 
-jQuery.ajax url:'/home/BidDetail', dataType: 'json', data: 'auctionId=1', success: (data) ->
-  sam.Process record for record in data.records
+#jQuery.ajax url:'/home/BidDetail', dataType: 'json', data: 'auctionId=1', success: (data) ->
+#  sam.Process record for record in data.records
