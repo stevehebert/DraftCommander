@@ -1,5 +1,5 @@
 (function() {
-  var BidHandler, HandlerBase, MessagePipeline, OwnerUpdateHandler, PlayerLoadHandler, TeamRulesProcessor, sam;
+  var AuctionRuleLoadHandler, BidHandler, HandlerBase, MessagePipeline, OwnerLoadHandler, OwnerUpdateHandler, PlayerLoadHandler, TeamRulesProcessor, sam;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -120,6 +120,40 @@
     };
     return PlayerLoadHandler;
   })();
+  OwnerLoadHandler = (function() {
+    function OwnerLoadHandler() {}
+    OwnerLoadHandler.prototype.CanProcess = function(message) {
+      return message.type === 'LOAD';
+    };
+    OwnerLoadHandler.prototype.ProcessRecord = function(grid, record) {
+      return grid.jqGrid('addRowData', record.Id, record.OwnerRow);
+    };
+    OwnerLoadHandler.prototype.Process = function(message) {
+      var grid, record, _i, _len, _ref, _results;
+      grid = jQuery('#ownerlist');
+      alert(message.OwnerData.length);
+      _ref = message.OwnerData;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        record = _ref[_i];
+        _results.push(this.ProcessRecord(grid, record));
+      }
+      return _results;
+    };
+    return OwnerLoadHandler;
+  })();
+  AuctionRuleLoadHandler = (function() {
+    function AuctionRuleLoadHandler() {}
+    AuctionRuleLoadHandler.AuctionRules;
+    AuctionRuleLoadHandler.prototype.CanProcess = function(message) {
+      return message.type === 'LOAD';
+    };
+    AuctionRuleLoadHandler.prototype.Process = function(message) {
+      this.AuctionRules = message.AuctionRules;
+      return alert(this.AuctionRules.StartingFunds);
+    };
+    return AuctionRuleLoadHandler;
+  })();
   OwnerUpdateHandler = (function() {
     __extends(OwnerUpdateHandler, HandlerBase);
     OwnerUpdateHandler.teamRules;
@@ -171,6 +205,8 @@
       this.messages = [];
       this.handlers = [];
       this.AddHandler(new PlayerLoadHandler());
+      this.AddHandler(new OwnerLoadHandler());
+      this.AddHandler(new AuctionRuleLoadHandler());
       this.AddHandler(new BidHandler());
       this.AddHandler(new OwnerUpdateHandler());
     }
@@ -233,14 +269,6 @@
         _results.push(sam.Process(record));
       }
       return _results;
-    }
-  });
-  jQuery.ajax({
-    url: '/home/AuctionRules',
-    dataType: 'json',
-    data: 'auctionId=1',
-    success: function(data) {
-      return sam.AddHandler(new OwnerUpdateHandler(new TeamRulesProcessor(data)));
     }
   });
 }).call(this);

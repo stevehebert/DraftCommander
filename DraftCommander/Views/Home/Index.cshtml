@@ -18,7 +18,6 @@
           { name: 'Estimate', index: 'Estimate', width: 50, align: 'left' },
           { name: 'Owner', index: 'Owner', width: 100, align: 'left' },
           { name: 'BidAmount', index: 'BidAmount', width: 50, align: 'right'}],
-            pager: jQuery('#pager'),
             loadonce: true,
             sortname: 'Id',
             sortorder: "desc",
@@ -27,9 +26,7 @@
         });
 
         jQuery("#ownerlist").jqGrid({
-            url: '/Home/OwnerData/',
-            datatype: 'json',
-            mtype: 'GET',
+            datatype: 'local',
             colNames: ['Name', 'CurrentFunds', 'PlayersLeft', 'RequiredPlayers', 'NeededPlayers'],
             colModel: [
           { name: 'Name', index: 'Name', width: 200, align: 'left' },
@@ -37,15 +34,11 @@
           { name: 'PlayersLeft', index: 'PlayersLeft', width: 50, align: 'left' },
           { name: 'RequiredPlayers', index: 'RequiredPlayers', width: 50, align: 'left' },
           { name: 'NeededPlayers', index: 'NeededPlayers', width: 50, align: 'left'}],
-            pager: jQuery('#ownerpager'),
             loadonce: true,
-            rowNum: 2000,
-            rowList: [20, 30, 50],
             width: 750,
             sortname: 'Id',
             sortorder: "desc",
             height: "100%",
-            viewrecords: true,
             imgpath: '/Content/themes/sunny/images',
             caption: 'Owners'
         });

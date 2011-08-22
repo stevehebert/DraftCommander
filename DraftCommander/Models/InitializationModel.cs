@@ -21,6 +21,8 @@ namespace DraftCommander.Models
             _bidCollection = bidCollection;
         }
 
+
+
         private IEnumerable<PlayerRow> GetPlayerRows(int auctionId)
         {
             var items = (from p in _playerCollection.AsQueryable()
@@ -47,17 +49,25 @@ namespace DraftCommander.Models
                                               p.BidAmount));
         }
 
+        private IEnumerable<OwnerInfo> GetOwnerRows(int auctionId)
+        {
+            var owners = from p in _ownerCollection.AsQueryable()
+                         where p.AuctionId == 1
+                         select new { p.Id, p.Name};
+
+            return from p in owners
+                   select new OwnerInfo {Id = p.Id, OwnerRow = new OwnerRow {Name = p.Name}};
+        }
 
         public JsonResult BigGulp(int auctionId,  Func<object, JsonResult> jsonProcessor)
         {
-            var players = GetPlayerRows(auctionId);
-
             return jsonProcessor(new
                                      {
                                          type = "LOAD",
-                                         PlayerData = players
+                                         PlayerData = GetPlayerRows(auctionId),
+                                         OwnerData = GetOwnerRows(auctionId),
+                                         AuctionRules = GetAuctionRules(auctionId)
                                      });
-
         }
 
         private AuctionRules GetAuctionRules(int auctionId)

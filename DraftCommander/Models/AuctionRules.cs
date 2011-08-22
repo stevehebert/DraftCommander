@@ -2,6 +2,21 @@
 
 namespace DraftCommander.Models
 {
+    public class OwnerRow
+    {
+        public string Name { get; set; }
+        public int? CurrentFunds { get; set; }
+        public int? PlayersLeft { get; set; }
+        public int? RequiredPlayers { get; set; }
+        public string NeededPlayers { get; set; }
+    }
+
+    public class OwnerInfo
+    {
+        public int Id { get; set; }
+        public OwnerRow OwnerRow { get; set; }
+    }
+
     public class AuctionRules
     {
         public int StartingFunds { get; set; }
