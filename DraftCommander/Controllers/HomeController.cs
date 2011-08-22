@@ -33,27 +33,6 @@ namespace DraftCommander.Controllers
             return View();
         }
 
-        public JsonResult GridData(string sidx, string sord, int page, int rows)
-        {
-            return _initializationModel.GetData(Json);
-        }
 
-        public JsonResult OwnerData(string idx, string sord, int page, int rows)
-        {
-            Thread.Sleep(900);
-            return _initializationModel.GetOwnerData(Json);
-        }
-
-        public JsonResult BidDetail(int auctionId)
-        {
-            Thread.Sleep(1500);
-            return _initializationModel.GetBidData(auctionId, o => Json(o, JsonRequestBehavior.AllowGet));
-        }
-
-        public JsonResult AuctionRules(int auctionId)
-        {
-            Thread.Sleep(1000);
-            return _initializationModel.GetAuctionRules(auctionId, o => Json(o, JsonRequestBehavior.AllowGet));
-        }
     }
 }

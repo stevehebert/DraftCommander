@@ -169,6 +169,3 @@ sam = new MessagePipeline()
 
 jQuery.ajax url:'/home/AuctionBigGulp', dataType:'json', data:'auctionId=1', success: (data) ->
   sam.Process data
-
-#jQuery.ajax url:'/home/BidDetail', dataType: 'json', data: 'auctionId=1', success: (data) ->
-#  sam.Process record for record in data.records
