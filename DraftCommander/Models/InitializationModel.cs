@@ -54,6 +54,7 @@ namespace DraftCommander.Models
 
             return jsonProcessor(new
                                      {
+                                         type = "LOAD",
                                          PlayerData = players
                                      });
 

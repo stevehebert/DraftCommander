@@ -40,6 +40,7 @@ namespace DraftCommander.Controllers
 
         public JsonResult OwnerData(string idx, string sord, int page, int rows)
         {
+            Thread.Sleep(900);
             return _initializationModel.GetOwnerData(Json);
         }
 

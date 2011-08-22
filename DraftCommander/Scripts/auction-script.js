@@ -1,5 +1,5 @@
 (function() {
-  var BidHandler, HandlerBase, MessagePipeline, OwnerUpdateHandler, TeamRulesProcessor, sam;
+  var BidHandler, HandlerBase, MessagePipeline, OwnerUpdateHandler, PlayerLoadHandler, TeamRulesProcessor, sam;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -99,6 +99,27 @@
     };
     return HandlerBase;
   })();
+  PlayerLoadHandler = (function() {
+    function PlayerLoadHandler() {}
+    PlayerLoadHandler.prototype.CanProcess = function(message) {
+      return message.type === 'LOAD';
+    };
+    PlayerLoadHandler.prototype.ProcessRecord = function(grid, record) {
+      return grid.jqGrid('addRowData', record.Id, record);
+    };
+    PlayerLoadHandler.prototype.Process = function(message) {
+      var grid, record, _i, _len, _ref, _results;
+      grid = jQuery('#list');
+      _ref = message.PlayerData;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        record = _ref[_i];
+        _results.push(this.ProcessRecord(grid, record));
+      }
+      return _results;
+    };
+    return PlayerLoadHandler;
+  })();
   OwnerUpdateHandler = (function() {
     __extends(OwnerUpdateHandler, HandlerBase);
     OwnerUpdateHandler.teamRules;
@@ -149,6 +170,7 @@
     function MessagePipeline() {
       this.messages = [];
       this.handlers = [];
+      this.AddHandler(new PlayerLoadHandler());
       this.AddHandler(new BidHandler());
       this.AddHandler(new OwnerUpdateHandler());
     }
@@ -191,6 +213,14 @@
   })();
   sam = new MessagePipeline();
   jQuery.ajax({
+    url: '/home/AuctionBigGulp',
+    dataType: 'json',
+    data: 'auctionId=1',
+    success: function(data) {
+      return sam.Process(data);
+    }
+  });
+  jQuery.ajax({
     url: '/home/BidDetail',
     dataType: 'json',
     data: 'auctionId=1',
@@ -212,11 +242,5 @@
     success: function(data) {
       return sam.AddHandler(new OwnerUpdateHandler(new TeamRulesProcessor(data)));
     }
-  });
-  $.ajax({
-    url: '/home/BigGulp',
-    dataType: json,
-    data: 'auctionId=1',
-    success: function(data) {}
   });
 }).call(this);

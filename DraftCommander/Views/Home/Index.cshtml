@@ -7,9 +7,7 @@
     jQuery(document).ready(function () {
         jQuery('#tabs11').tabs();
         jQuery("#list").jqGrid({
-            url: '/Home/GridData/',
-            datatype: 'json',
-            mtype: 'GET',
+            datatype: 'local',
             colNames: ['Id', 'Position', 'Name', 'Team', 'Rank', 'Estimate', 'Owner', 'BidAmount'],
             colModel: [
           { name: 'Id', index: 'Id', width: 40, align: 'left' },
@@ -22,11 +20,8 @@
           { name: 'BidAmount', index: 'BidAmount', width: 50, align: 'right'}],
             pager: jQuery('#pager'),
             loadonce: true,
-            rowNum: 2000,
-            rowList: [20, 30, 50],
             sortname: 'Id',
             sortorder: "desc",
-            viewrecords: true,
             imgpath: '/Content/themes/sunny/images',
             caption: 'Players'
         });

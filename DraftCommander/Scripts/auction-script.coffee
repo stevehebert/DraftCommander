@@ -64,6 +64,17 @@ class HandlerBase
     list = jQuery '#list'
     list.jqGrid 'setRowData', playerId, data
 
+class PlayerLoadHandler
+  CanProcess: (message) ->
+    message.type == 'LOAD'
+
+  ProcessRecord: (grid, record) ->
+    grid.jqGrid 'addRowData', record.Id, record
+
+  Process: (message) ->
+    grid = jQuery '#list'
+    @ProcessRecord(grid, record) for record in message.PlayerData
+
 class OwnerUpdateHandler extends HandlerBase
   @teamRules
 
@@ -106,6 +117,7 @@ class MessagePipeline
   constructor: ->
     @messages = []
     @handlers = []
+    @AddHandler new PlayerLoadHandler()
     @AddHandler new BidHandler()
     @AddHandler new OwnerUpdateHandler()
 
@@ -121,14 +133,11 @@ class MessagePipeline
 
 sam = new MessagePipeline()
 
+jQuery.ajax url:'/home/AuctionBigGulp', dataType:'json', data:'auctionId=1', success: (data) ->
+  sam.Process data
+
 jQuery.ajax url:'/home/BidDetail', dataType: 'json', data: 'auctionId=1', success: (data) ->
   sam.Process record for record in data.records
 
-
 jQuery.ajax url:'/home/AuctionRules', dataType: 'json', data: 'auctionId=1', success: (data) ->
   sam.AddHandler new OwnerUpdateHandler( new TeamRulesProcessor(data))
-
-
-$.ajax url:'/home/BigGulp', dataType:json, data:'auctionId=1', success: (data) ->
-  
-
