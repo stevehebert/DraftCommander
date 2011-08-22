@@ -10,28 +10,29 @@
   };
   TeamRulesProcessor = (function() {
     TeamRulesProcessor.rules;
-    function TeamRulesProcessor(rules) {
-      var owner, _i, _j, _len, _len2, _ref;
-      this.rules = rules;
-      _ref = GetOwnerList();
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        owner = _ref[_i];
-        rules[owner] = rules.Positions.slice(0, rules.Positions.Length);
-      }
-      for (_j = 0, _len2 = rules.length; _j < _len2; _j++) {
-        owner = rules[_j];
-        owner.CurrentFunds = rules.StartingFunds;
-        owner.NeededPlayerCount = rules.MinPlayerCount;
-        owner.MaxBid(__bind(function() {
-          return this.CurrentFunds - (this.NeededPlayerCount(-1)) * rules.MinBid;
-        }, this));
-      }
-    }
     TeamRulesProcessor.prototype.GetOwnerList = function() {
       var list;
       list = jQuery('#ownerlist');
       return list.jqGrid('getDataIDs');
     };
+    function TeamRulesProcessor(rules) {
+      var owner, owners, _i, _j, _len, _len2;
+      this.rules = rules;
+      owners = this.GetOwnerList();
+      alert(owners.length);
+      for (_i = 0, _len = owners.length; _i < _len; _i++) {
+        owner = owners[_i];
+        for (_j = 0, _len2 = owners.length; _j < _len2; _j++) {
+          owner = owners[_j];
+          this.rules[owner] = this.rules.Positions.slice(0, rules.Positions.Length);
+        }
+        owner.CurrentFunds = this.rules.StartingFunds;
+        owner.NeededPlayerCount = this.rules.MinPlayerCount;
+        owner.MaxBid(__bind(function() {
+          return this.CurrentFunds - (this.NeededPlayerCount(-1)) * this.rules.MinBid;
+        }, this));
+      }
+    }
     TeamRulesProcessor.prototype.ProcessBid = function(ownerId, bidAmount, position) {
       var ownerInfo, positionInfo, set, summary, _i, _len, _ref;
       ownerInfo = this.rules[ownerId];
@@ -100,8 +101,9 @@
   })();
   OwnerUpdateHandler = (function() {
     __extends(OwnerUpdateHandler, HandlerBase);
-    function OwnerUpdateHandler() {
-      OwnerUpdateHandler.__super__.constructor.apply(this, arguments);
+    OwnerUpdateHandler.teamRules;
+    function OwnerUpdateHandler(rules) {
+      this.teamRules = rules;
     }
     OwnerUpdateHandler.prototype.CanProcess = function(message) {
       return message.type === 'BID';
@@ -147,22 +149,23 @@
     function MessagePipeline() {
       this.messages = [];
       this.handlers = [];
-      this.handlers.push(new BidHandler());
-      this.handlers.push(new OwnerUpdateHandler());
+      this.AddHandler(new BidHandler());
+      this.AddHandler(new OwnerUpdateHandler());
     }
+    MessagePipeline.prototype.AddHandler = function(handler) {
+      return this.handlers.push(handler);
+    };
     MessagePipeline.prototype.Process = function(message) {
       var handler, _i, _len, _ref, _results;
-      if (message.type === 'BID') {
-        _ref = this.handlers;
-        _results = [];
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          handler = _ref[_i];
-          if (handler.CanProcess(message)) {
-            _results.push(handler.Process(message));
-          }
+      _ref = this.handlers;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        handler = _ref[_i];
+        if (handler.CanProcess(message)) {
+          _results.push(handler.Process(message));
         }
-        return _results;
       }
+      return _results;
     };
     MessagePipeline.prototype.GetHistory = function() {
       return jQuery.ajax({
@@ -197,11 +200,23 @@
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         record = _ref[_i];
-        if (record.type === 'BID') {
-          _results.push(sam.Process(record));
-        }
+        _results.push(sam.Process(record));
       }
       return _results;
     }
+  });
+  jQuery.ajax({
+    url: '/home/AuctionRules',
+    dataType: 'json',
+    data: 'auctionId=1',
+    success: function(data) {
+      return sam.AddHandler(new OwnerUpdateHandler(new TeamRulesProcessor(data)));
+    }
+  });
+  $.ajax({
+    url: '/home/BigGulp',
+    dataType: json,
+    data: 'auctionId=1',
+    success: function(data) {}
   });
 }).call(this);

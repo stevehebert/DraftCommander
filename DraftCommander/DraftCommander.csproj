@@ -87,6 +87,7 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\AccountModels.cs" />
+    <Compile Include="Models\AuctionRules.cs" />
     <Compile Include="Models\InitializationModel.cs" />
     <Compile Include="Models\~RegistrationModule.cs" />
     <Compile Include="ProjectModule.cs" />

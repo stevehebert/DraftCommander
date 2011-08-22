@@ -21,35 +21,76 @@ namespace DraftCommander.Models
             _bidCollection = bidCollection;
         }
 
+        private IEnumerable<PlayerRow> GetPlayerRows(int auctionId)
+        {
+            var items = (from p in _playerCollection.AsQueryable()
+                         join o in _rankingCollection.AsQueryable() on p.Id equals o.PlayerId into outer
+                         from o in outer.DefaultIfEmpty()
+                         select new
+                         {
+                             p.Id,
+                             p.Position,
+                             p.Name,
+                             p.Team,
+                             Rank = ((o != null ? new int?(o.Rank) : null)),
+                             Estimate = (o != null ? new int?(o.Estimate) : null),
+                             Owner = string.Empty,
+                             BidAmount = new int?()
+                         });
+
+
+            var rankingId = 1;
+
+            return (from p in items
+                            select
+                                new PlayerRow(p.Id, p.Position, p.Name, p.Team, p.Rank, p.Estimate, p.Owner,
+                                              p.BidAmount));
+        }
+
+
+        public JsonResult BigGulp(int auctionId,  Func<object, JsonResult> jsonProcessor)
+        {
+            var players = GetPlayerRows(auctionId);
+
+            return jsonProcessor(new
+                                     {
+                                         PlayerData = players
+                                     });
+
+        }
+
+        private AuctionRules GetAuctionRules(int auctionId)
+        {
+            return new AuctionRules
+                       {
+                           StartingFunds = 100,
+                           MinBid = 1,
+                           MinPlayerCount = 13,
+                           Positions = new[]
+                                           {
+                                               new PositionSummary {Position = "QB", Count = 1},
+                                               new PositionSummary {Position = "RB", Count = 2},
+                                               new PositionSummary {Position = "WR", Count = 2},
+                                               new PositionSummary {Position = "TE", Count = 1},
+                                               new PositionSummary {Position = "K", Count = 1},
+                                               new PositionSummary {Position = "DEF", Count = 1}
+                                           }
+                       };
+        }
+
+
         public JsonResult GetAuctionRules(int auctionId, Func<object, JsonResult> jsonProcessor)
         {
             return
-                jsonProcessor(
-                    new
-                        {
-                            StartingFunds = 100,
-                            MinBid = 1,
-                            MinPlayerCount = 13,
-                            Positions = new[]
-                                            {
-                                                new {Position = "QB", Count = 1},
-                                                new {Position = "RB", Count = 2},
-                                                new {Position = "WR", Count = 2},
-                                                new {Position = "TE", Count = 1},
-                                                new {Position = "K", Count = 1},
-                                                new {Position = "DEF", Count = 1}
-                                            }
-
-                        });
-
+                jsonProcessor(GetAuctionRules(auctionId));
         }
 
         public JsonResult GetBidData(int auctionId, Func<object, JsonResult> jsonProcessor)
         {
             var contents = from p in _bidCollection.Where(p => p.AuctionId == auctionId)
-                           select new {type = "BID", p.OwnerId, p.PlayerId, p.BidAmount};
+                           select new { type = "BID", p.OwnerId, p.PlayerId, p.BidAmount };
 
-            var jsonData = new {records = contents};
+            var jsonData = new { records = contents };
 
             return jsonProcessor(jsonData);
         }
@@ -58,7 +99,7 @@ namespace DraftCommander.Models
         {
             var owners = from p in _ownerCollection.AsQueryable()
                          where p.AuctionId == 1
-                         select new {p.Id, p.Name, CurrentFunds = 100, PlayersLeft = 13, RequiredPlayers = 8, NeededPlayers = "1 QB, 2 RB"};
+                         select new { p.Id, p.Name, CurrentFunds = 100, PlayersLeft = 13, RequiredPlayers = 8, NeededPlayers = "1 QB, 2 RB" };
 
             var itemdata = from p in owners
                            select
@@ -66,8 +107,7 @@ namespace DraftCommander.Models
                                    {
                                        id = p.Id,
                                        cell =
-                               new object[]
-                                   {p.Name, p.CurrentFunds, p.PlayersLeft, p.RequiredPlayers, p.NeededPlayers}
+                               new object[] { p.Name, p.CurrentFunds, p.PlayersLeft, p.RequiredPlayers, p.NeededPlayers }
                                    };
 
             var jsonData = new
@@ -85,35 +125,28 @@ namespace DraftCommander.Models
 
         public JsonResult GetData(Func<object, JsonRequestBehavior, JsonResult> jsonProcessor)
         {
-            var items = from p in _playerCollection.AsQueryable()
-                        join o in _rankingCollection.AsQueryable() on p.Id equals o.PlayerId into outer
-                        from o in outer.DefaultIfEmpty()
-                        select new
-                                   {
-                                       p.Id,
-                                       p.Position,
-                                       p.Name,
-                                       p.Team,
-                                       Rank = ((o != null ? new int?(o.Rank) : null)),
-                                       Estimate = (o != null ? new int?(o.Estimate) : null),
-                                       Owner = string.Empty,
-                                       BidAmount = string.Empty
-                                   };
-            
-             
+            var items = (from p in _playerCollection.AsQueryable()
+                         join o in _rankingCollection.AsQueryable() on p.Id equals o.PlayerId into outer
+                         from o in outer.DefaultIfEmpty()
+                         select new
+                                    {
+                                        p.Id,
+                                        p.Position,
+                                        p.Name,
+                                        p.Team,
+                                        Rank = ((o != null ? new int?(o.Rank) : null)),
+                                        Estimate = (o != null ? new int?(o.Estimate) : null),
+                                        Owner = string.Empty,
+                                        BidAmount = new int?()
+                                    });
+
+
             var rankingId = 1;
 
-            
             var itemdata = (from p in items
                             select
-                                new
-                                {
-
-                                    id = p.Id,
-                                    cell = new object[] { p.Id, p.Position, p.Name, p.Team, p.Rank, p.Estimate, p.Owner, p.BidAmount}
-                                }).ToArray();
-
-
+                                new PlayerRow(p.Id, p.Position, p.Name, p.Team, p.Rank, p.Estimate, p.Owner,
+                                              p.BidAmount));
             var jsonData = new
             {
                 total = 1,
@@ -123,6 +156,9 @@ namespace DraftCommander.Models
             };
 
             return jsonProcessor(jsonData, JsonRequestBehavior.AllowGet);
+
+
+
         }
 
         public IEnumerable<KeyValuePair<int, string>> PlayerList

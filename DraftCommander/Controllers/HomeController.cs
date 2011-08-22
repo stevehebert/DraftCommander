@@ -14,6 +14,11 @@ namespace DraftCommander.Controllers
         }
 
 
+        public JsonResult AuctionBigGulp(int auctionId)
+        {
+            return _initializationModel.BigGulp(auctionId, o => Json(o, JsonRequestBehavior.AllowGet));
+        }
+
         public ActionResult Index()
         {
             var count = 5;
@@ -40,12 +45,13 @@ namespace DraftCommander.Controllers
 
         public JsonResult BidDetail(int auctionId)
         {
-            Thread.Sleep(500);
+            Thread.Sleep(1500);
             return _initializationModel.GetBidData(auctionId, o => Json(o, JsonRequestBehavior.AllowGet));
         }
 
         public JsonResult AuctionRules(int auctionId)
         {
+            Thread.Sleep(1000);
             return _initializationModel.GetAuctionRules(auctionId, o => Json(o, JsonRequestBehavior.AllowGet));
         }
     }

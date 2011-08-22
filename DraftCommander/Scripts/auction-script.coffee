@@ -1,20 +1,24 @@
 class TeamRulesProcessor
   @rules
 
-  constructor: (rules) ->
-    @rules = rules
-    
-    rules[owner] = rules.Positions.slice(0, rules.Positions.Length) for owner in GetOwnerList()
-
-    for owner in rules
-      owner.CurrentFunds = rules.StartingFunds
-      owner.NeededPlayerCount = rules.MinPlayerCount
-      # gotta watch this next line
-      owner.MaxBid => @CurrentFunds - (@NeededPlayerCount -1) * rules.MinBid
-
   GetOwnerList: ->
     list = jQuery '#ownerlist'
     list.jqGrid 'getDataIDs'
+
+
+  constructor: (rules) ->
+    @rules = rules
+    
+    owners = @GetOwnerList()
+    alert owners.length 
+
+    for owner in owners
+      @rules[owner] = @rules.Positions.slice(0, rules.Positions.Length) for owner in owners
+      owner.CurrentFunds = @rules.StartingFunds
+      owner.NeededPlayerCount = @rules.MinPlayerCount
+      # gotta watch this next line
+      owner.MaxBid => @CurrentFunds - (@NeededPlayerCount -1) * @rules.MinBid
+
 
   ProcessBid: (ownerId, bidAmount, position) ->
     ownerInfo = @rules[ownerId]
@@ -61,6 +65,11 @@ class HandlerBase
     list.jqGrid 'setRowData', playerId, data
 
 class OwnerUpdateHandler extends HandlerBase
+  @teamRules
+
+  constructor: (rules) ->
+    @teamRules = rules
+
   CanProcess: (message) ->
     message.type == 'BID'
 
@@ -97,12 +106,14 @@ class MessagePipeline
   constructor: ->
     @messages = []
     @handlers = []
-    @handlers.push new BidHandler()
-    @handlers.push new OwnerUpdateHandler()
+    @AddHandler new BidHandler()
+    @AddHandler new OwnerUpdateHandler()
+
+  AddHandler: (handler) ->
+    @handlers.push handler
 
   Process: (message) ->
-    if message.type == 'BID' 
-      handler.Process(message) for handler in @handlers when handler.CanProcess(message)
+    handler.Process(message) for handler in @handlers when handler.CanProcess(message)
 
   GetHistory: ->	
     jQuery.ajax url:'/home/BidDetail', dataType: 'json', data: 'auctionId=1', context:this, success: (data) ->
@@ -111,6 +122,13 @@ class MessagePipeline
 sam = new MessagePipeline()
 
 jQuery.ajax url:'/home/BidDetail', dataType: 'json', data: 'auctionId=1', success: (data) ->
-  sam.Process record for record in data.records when record.type == 'BID'
+  sam.Process record for record in data.records
 
+
+jQuery.ajax url:'/home/AuctionRules', dataType: 'json', data: 'auctionId=1', success: (data) ->
+  sam.AddHandler new OwnerUpdateHandler( new TeamRulesProcessor(data))
+
+
+$.ajax url:'/home/BigGulp', dataType:json, data:'auctionId=1', success: (data) ->
+  
 
