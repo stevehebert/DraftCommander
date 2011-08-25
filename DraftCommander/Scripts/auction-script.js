@@ -1,5 +1,5 @@
 (function() {
-  var AuctionRuleLoadHandler, BidHandler, BidLoadHandler, HandlerBase, MessagePipeline, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerLoadHandler, sam;
+  var AuctionState, BidHandler, BidLoadHandler, HandlerBase, MessagePipeline, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerLoadHandler, StateLoadHandler, sam;
   var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -8,6 +8,40 @@
     child.__super__ = parent.prototype;
     return child;
   };
+  AuctionState = (function() {
+    function AuctionState() {}
+    AuctionState.OwnerList = [];
+    AuctionState.PlayerList = [];
+    AuctionState.AuctionRules;
+    AuctionState.Bids = [];
+    AuctionState.OwnerData = [];
+    AuctionState.prototype.Process = function(message) {
+      var bid, record, _i, _j, _k, _len, _len2, _len3, _ref, _ref2, _ref3, _results;
+      this.OwnerData = [];
+      this.AuctionRules = message.AuctionRules;
+      this.OwnerList = [];
+      _ref = message.OwnerData;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        record = _ref[_i];
+        this.OwnerList[record.Id] = record;
+      }
+      this.PlayerList = {};
+      _ref2 = message.PlayerData;
+      for (_j = 0, _len2 = _ref2.length; _j < _len2; _j++) {
+        record = _ref2[_j];
+        this.PlayerList[record.Id] = record;
+      }
+      this.Bids = [];
+      _ref3 = message.BidHistory;
+      _results = [];
+      for (_k = 0, _len3 = _ref3.length; _k < _len3; _k++) {
+        bid = _ref3[_k];
+        _results.push(this.Bids.push(bid));
+      }
+      return _results;
+    };
+    return AuctionState;
+  })();
   HandlerBase = (function() {
     function HandlerBase() {}
     HandlerBase.prototype.GetOwnerData = function(ownerId) {
@@ -32,8 +66,23 @@
     };
     return HandlerBase;
   })();
+  StateLoadHandler = (function() {
+    StateLoadHandler.AuctionState;
+    function StateLoadHandler(auctionState) {
+      this.AuctionState = auctionState;
+    }
+    StateLoadHandler.prototype.CanProcess = function(message) {
+      return message.type === 'LOAD';
+    };
+    StateLoadHandler.prototype.Process = function(message) {
+      return this.AuctionState.Process(message);
+    };
+    return StateLoadHandler;
+  })();
   PlayerLoadHandler = (function() {
-    function PlayerLoadHandler() {}
+    function PlayerLoadHandler(AuctionState) {
+      this.AuctionState = AuctionState;
+    }
     PlayerLoadHandler.prototype.CanProcess = function(message) {
       return message.type === 'LOAD';
     };
@@ -41,12 +90,12 @@
       return grid.jqGrid('addRowData', record.Id, record);
     };
     PlayerLoadHandler.prototype.Process = function(message) {
-      var grid, record, _i, _len, _ref, _results;
+      var grid, id, record, _ref, _results;
       grid = jQuery('#list');
-      _ref = message.PlayerData;
+      _ref = this.AuctionState.PlayerList;
       _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        record = _ref[_i];
+      for (id in _ref) {
+        record = _ref[id];
         _results.push(this.ProcessRecord(grid, record));
       }
       return _results;
@@ -61,40 +110,46 @@
     OwnerRecord.RequiredPlayers;
     OwnerRecord.NeededPlayers;
     OwnerRecord.Positions;
-    OwnerRecord.AuctionRules;
-    function OwnerRecord(auctionRules, record) {
-      this.AuctionRules = auctionRules;
+    function OwnerRecord(record, AuctionState) {
+      var position, _i, _len, _ref;
+      this.AuctionState = AuctionState;
       this.Id = record.Id;
       this.Name = record.OwnerRow.Name;
-      this.CurrentFunds = auctionRules.StartingFunds;
-      this.PlayersLeft = auctionRules.MinPlayerCount;
-      this.Positions = auctionRules.Positions.slice(0, auctionRules.Positions.length);
+      this.CurrentFunds = this.AuctionState.AuctionRules.StartingFunds;
+      this.PlayersLeft = this.AuctionState.AuctionRules.MinPlayerCount;
+      this.Positions = [];
+      _ref = this.AuctionState.AuctionRules.Positions;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        position = _ref[_i];
+        this.Positions[position.Position] = position.Count;
+      }
+      this.AssignedPlayers = [];
       this.RequiredPlayers = this.CalculateRequiredPlayers();
       this.NeededPlayers = this.CalculateNeededPlayers();
     }
     OwnerRecord.prototype.CalculateRequiredPlayers = function() {
-      var count, record, _i, _len, _ref;
+      var amount, count, id, _ref;
       count = 0;
       _ref = this.Positions;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        record = _ref[_i];
-        if (record.Count > 0) {
-          count = count + record.Count;
+      for (id in _ref) {
+        amount = _ref[id];
+        if (amount > 0) {
+          count = count + amount;
         }
       }
       return count;
     };
     OwnerRecord.prototype.CalculateNeededPlayers = function() {
-      var neededPlayers, position, _i, _len, _ref;
+      var count, neededPlayers, position, _ref;
       neededPlayers = '';
-      _ref = this.AuctionRules.Positions;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        position = _ref[_i];
-        if (position.Count > 0) {
+      _ref = this.Positions;
+      for (position in _ref) {
+        count = _ref[position];
+        if (count > 0) {
           if (neededPlayers.length > 0) {
             neededPlayers += ', ';
           }
-          neededPlayers += position.Count + ' ' + position.Position;
+          neededPlayers += count + ' ' + position;
         }
       }
       if (neededPlayers === '') {
@@ -103,63 +158,58 @@
       return neededPlayers;
     };
     OwnerRecord.prototype.ProcessBid = function(message) {
-      return this.CurrentFunds -= message.BidAmount;
+      var player;
+      this.CurrentFunds -= message.BidAmount;
+      player = this.AuctionState.PlayerList[message.PlayerId];
+      this.AssignedPlayers[message.PlayerId] = player;
+      this.PlayersLeft -= 1;
+      this.Positions[player.Position] -= 1;
+      this.NeededPlayers = this.CalculateNeededPlayers();
+      return this.RequiredPlayers = this.CalculateRequiredPlayers();
     };
     return OwnerRecord;
   })();
   OwnerLoadHandler = (function() {
-    function OwnerLoadHandler() {}
-    OwnerLoadHandler.OwnerData = [];
-    OwnerLoadHandler.AuctionRules;
+    function OwnerLoadHandler(AuctionState) {
+      this.AuctionState = AuctionState;
+    }
     OwnerLoadHandler.prototype.CanProcess = function(message) {
       return message.type === 'LOAD';
     };
     OwnerLoadHandler.prototype.ProcessRecord = function(grid, record) {
       var newRecord;
-      newRecord = new OwnerRecord(this.AuctionRules, record);
-      this.OwnerData[newRecord.Id] = newRecord;
+      newRecord = new OwnerRecord(record, this.AuctionState);
+      this.AuctionState.OwnerData[newRecord.Id] = newRecord;
       return grid.jqGrid('addRowData', newRecord.Id, newRecord);
     };
     OwnerLoadHandler.prototype.Process = function(message) {
-      var grid, record, _i, _len, _ref, _results;
-      this.AuctionRules = message.AuctionRules;
-      this.OwnerData = [];
+      var grid, id, record, _ref, _results;
       grid = jQuery('#ownerlist');
-      _ref = message.OwnerData;
+      _ref = this.AuctionState.OwnerList;
       _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        record = _ref[_i];
+      for (id in _ref) {
+        record = _ref[id];
         _results.push(this.ProcessRecord(grid, record));
       }
       return _results;
     };
     return OwnerLoadHandler;
   })();
-  AuctionRuleLoadHandler = (function() {
-    function AuctionRuleLoadHandler() {}
-    AuctionRuleLoadHandler.AuctionRules;
-    AuctionRuleLoadHandler.prototype.CanProcess = function(message) {
-      return message.type === 'LOAD';
-    };
-    AuctionRuleLoadHandler.prototype.Process = function(message) {
-      return this.AuctionRules = message.AuctionRules;
-    };
-    return AuctionRuleLoadHandler;
-  })();
   BidLoadHandler = (function() {
     BidLoadHandler.pipeline;
-    function BidLoadHandler(pipeline) {
+    function BidLoadHandler(pipeline, AuctionState) {
+      this.AuctionState = AuctionState;
       this.pipeline = pipeline;
     }
     BidLoadHandler.prototype.CanProcess = function(message) {
       return message.type === 'LOAD';
     };
     BidLoadHandler.prototype.Process = function(message) {
-      var bid, _i, _len, _ref, _results;
-      _ref = message.BidHistory;
+      var bid, id, _ref, _results;
+      _ref = this.AuctionState.Bids;
       _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        bid = _ref[_i];
+      for (id in _ref) {
+        bid = _ref[id];
         _results.push(this.pipeline.Process(bid));
       }
       return _results;
@@ -168,16 +218,15 @@
   })();
   OwnerUpdateHandler = (function() {
     __extends(OwnerUpdateHandler, HandlerBase);
-    OwnerUpdateHandler.ownerInfo;
-    function OwnerUpdateHandler(ownerInfo) {
-      this.ownerInfo = ownerInfo;
+    function OwnerUpdateHandler(AuctionState) {
+      this.AuctionState = AuctionState;
     }
     OwnerUpdateHandler.prototype.CanProcess = function(message) {
       return message.type === 'BID';
     };
     OwnerUpdateHandler.prototype.Process = function(message) {
       var ownerData;
-      ownerData = this.ownerInfo.OwnerData[message.OwnerId];
+      ownerData = this.AuctionState.OwnerData[message.OwnerId];
       ownerData.ProcessBid(message);
       return this.SaveOwnerData(message.OwnerId, ownerData);
     };
@@ -209,15 +258,16 @@
     MessagePipeline.messages;
     MessagePipeline.handlers;
     function MessagePipeline() {
-      var loadHandler;
+      var auctionState;
       this.messages = [];
       this.handlers = [];
-      this.AddHandler(new PlayerLoadHandler());
-      loadHandler = this.AddHandler(new OwnerLoadHandler());
-      this.AddHandler(new AuctionRuleLoadHandler());
-      this.AddHandler(new BidLoadHandler(this));
+      auctionState = new AuctionState();
+      this.AddHandler(new StateLoadHandler(auctionState));
+      this.AddHandler(new PlayerLoadHandler(auctionState));
+      this.AddHandler(new OwnerLoadHandler(auctionState));
+      this.AddHandler(new BidLoadHandler(this, auctionState));
       this.AddHandler(new BidHandler());
-      this.AddHandler(new OwnerUpdateHandler(loadHandler));
+      this.AddHandler(new OwnerUpdateHandler(auctionState));
     }
     MessagePipeline.prototype.AddHandler = function(handler) {
       this.handlers.push(handler);
