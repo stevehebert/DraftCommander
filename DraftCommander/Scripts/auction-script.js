@@ -268,14 +268,13 @@
       this.AuctionState = AuctionState;
     }
     BidSetHandler.prototype.CanProcess = function(message) {
-      return message.type === 'BID';
+      return message.type === 'BID-SET';
     };
     BidSetHandler.prototype.Process = function(message) {
       var player;
       player = this.AuctionState.PlayerList[message.player];
-      jQuery('#list').jqGrid('setSelection', message.player);
       jQuery('#player-under-bid').html(player.Name);
-      return uery('#player-bid').html(message.value);
+      return jQuery('#player-bid').html(message.value);
     };
     return BidSetHandler;
   })();
@@ -293,6 +292,7 @@
       this.AddHandler(new BidLoadHandler(this, auctionState));
       this.AddHandler(new BidHandler());
       this.AddHandler(new OwnerUpdateHandler(auctionState));
+      this.AddHandler(new BidSetHandler(auctionState));
     }
     MessagePipeline.prototype.AddHandler = function(handler) {
       this.handlers.push(handler);
@@ -319,7 +319,7 @@
       message = {
         channel: 'activity',
         message: {
-          type: 'bid-set',
+          type: 'BID-SET',
           value: jQuery('#bid-value').val(),
           player: jQuery('#admin-select').val()
         }
@@ -330,11 +330,7 @@
   PUBNUB.subscribe({
     channel: 'activity',
     callback: function(message) {
-      var ret;
-      ret = jQuery("#list").jqGrid('getRowData', message.player);
-      jQuery('#list').jqGrid('setSelection', message.player);
-      jQuery('#player-under-bid').html(ret.Name);
-      return jQuery('#player-bid').html(message.value);
+      return sam.Process(message);
     }
   });
   jQuery.ajax({

@@ -192,13 +192,12 @@ class BidSetHandler extends HandlerBase
   constructor: (@AuctionState) ->
 
   CanProcess: (message) ->
-    message.type == 'BID'
+    message.type == 'BID-SET'
 
   Process: (message) ->
     player = @AuctionState.PlayerList[message.player]
-    jQuery('#list').jqGrid('setSelection', message.player);
     jQuery('#player-under-bid').html(player.Name)
-    uery('#player-bid').html(message.value)
+    jQuery('#player-bid').html(message.value)
 
 class MessagePipeline
   @messages
@@ -214,6 +213,7 @@ class MessagePipeline
     @AddHandler new BidLoadHandler(this, auctionState)
     @AddHandler new BidHandler()
     @AddHandler new OwnerUpdateHandler(auctionState)
+    @AddHandler new BidSetHandler(auctionState)
 
   AddHandler: (handler) ->
     @handlers.push handler
@@ -223,25 +223,19 @@ class MessagePipeline
     handler.Process(message) for handler in @handlers when handler.CanProcess(message)
 
 sam = new MessagePipeline()
+
 $ ->
   jQuery('#bid-setter').click ->
     message = 
       channel: 'activity'
       message:
-        type: 'bid-set'
+        type: 'BID-SET'
         value: jQuery('#bid-value').val()
         player: jQuery('#admin-select').val()
     PUBNUB.publish( message)
 
 PUBNUB.subscribe channel: 'activity', callback: (message) ->
-                ret = jQuery("#list").jqGrid('getRowData', message.player)
-                jQuery('#list').jqGrid('setSelection', message.player);
-                jQuery('#player-under-bid').html(ret.Name)
-                jQuery('#player-bid').html(message.value)
-
-
-
+  sam.Process(message)
 
 jQuery.ajax url:'/home/AuctionBigGulp', dataType:'json', data:'auctionId=1', success: (data) ->
   sam.Process data
-
