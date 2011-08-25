@@ -73,6 +73,7 @@ class OwnerRecord
   @RequiredPlayers
   @NeededPlayers
   @Positions
+  @MaxBix
 
   constructor: ( record, @AuctionState) ->
     @Id = record.Id
@@ -89,6 +90,10 @@ class OwnerRecord
 
     @RequiredPlayers = @CalculateRequiredPlayers()
     @NeededPlayers = @CalculateNeededPlayers()
+    @RecalcMaxBid()
+
+  RecalcMaxBid: () =>
+    @MaxBid = @CurrentFunds - ((@PlayersLeft - 1) * @AuctionState.AuctionRules.MinBid)
 
   CalculateRequiredPlayers: () ->
     count = 0
@@ -106,7 +111,8 @@ class OwnerRecord
       
     if neededPlayers == ''
       neededPlayers = '<< All Required Positions Filled >>'
-      
+
+    neededPlayers = '  ' + neededPlayers         
     return neededPlayers
   
   ProcessBid: (message) ->
@@ -120,9 +126,9 @@ class OwnerRecord
 
     @NeededPlayers = @CalculateNeededPlayers()
     @RequiredPlayers = @CalculateRequiredPlayers()
+    @RecalcMaxBid()
 
-
-    # record other stuff here
+    
 
 class OwnerLoadHandler
   constructor: (@AuctionState) ->
@@ -181,6 +187,19 @@ class BidHandler extends HandlerBase
     ret.BidAmount = message.BidAmount
     @SavePlayerData(message.PlayerId, ret)
 
+class BidSetHandler extends HandlerBase
+  
+  constructor: (@AuctionState) ->
+
+  CanProcess: (message) ->
+    message.type == 'BID'
+
+  Process: (message) ->
+    player = @AuctionState.PlayerList[message.player]
+    jQuery('#list').jqGrid('setSelection', message.player);
+    jQuery('#player-under-bid').html(player.Name)
+    uery('#player-bid').html(message.value)
+
 class MessagePipeline
   @messages
   @handlers
@@ -204,6 +223,25 @@ class MessagePipeline
     handler.Process(message) for handler in @handlers when handler.CanProcess(message)
 
 sam = new MessagePipeline()
+$ ->
+  jQuery('#bid-setter').click ->
+    message = 
+      channel: 'activity'
+      message:
+        type: 'bid-set'
+        value: jQuery('#bid-value').val()
+        player: jQuery('#admin-select').val()
+    PUBNUB.publish( message)
+
+PUBNUB.subscribe channel: 'activity', callback: (message) ->
+                ret = jQuery("#list").jqGrid('getRowData', message.player)
+                jQuery('#list').jqGrid('setSelection', message.player);
+                jQuery('#player-under-bid').html(ret.Name)
+                jQuery('#player-bid').html(message.value)
+
+
+
 
 jQuery.ajax url:'/home/AuctionBigGulp', dataType:'json', data:'auctionId=1', success: (data) ->
   sam.Process data
+

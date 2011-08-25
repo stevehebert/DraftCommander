@@ -1,6 +1,6 @@
 (function() {
-  var AuctionState, BidHandler, BidLoadHandler, HandlerBase, MessagePipeline, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerLoadHandler, StateLoadHandler, sam;
-  var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
+  var AuctionState, BidHandler, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerLoadHandler, StateLoadHandler, sam;
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
     ctor.prototype = parent.prototype;
@@ -110,9 +110,11 @@
     OwnerRecord.RequiredPlayers;
     OwnerRecord.NeededPlayers;
     OwnerRecord.Positions;
+    OwnerRecord.MaxBix;
     function OwnerRecord(record, AuctionState) {
       var position, _i, _len, _ref;
       this.AuctionState = AuctionState;
+      this.RecalcMaxBid = __bind(this.RecalcMaxBid, this);
       this.Id = record.Id;
       this.Name = record.OwnerRow.Name;
       this.CurrentFunds = this.AuctionState.AuctionRules.StartingFunds;
@@ -126,7 +128,11 @@
       this.AssignedPlayers = [];
       this.RequiredPlayers = this.CalculateRequiredPlayers();
       this.NeededPlayers = this.CalculateNeededPlayers();
+      this.RecalcMaxBid();
     }
+    OwnerRecord.prototype.RecalcMaxBid = function() {
+      return this.MaxBid = this.CurrentFunds - ((this.PlayersLeft - 1) * this.AuctionState.AuctionRules.MinBid);
+    };
     OwnerRecord.prototype.CalculateRequiredPlayers = function() {
       var amount, count, id, _ref;
       count = 0;
@@ -155,6 +161,7 @@
       if (neededPlayers === '') {
         neededPlayers = '<< All Required Positions Filled >>';
       }
+      neededPlayers = '  ' + neededPlayers;
       return neededPlayers;
     };
     OwnerRecord.prototype.ProcessBid = function(message) {
@@ -165,7 +172,8 @@
       this.PlayersLeft -= 1;
       this.Positions[player.Position] -= 1;
       this.NeededPlayers = this.CalculateNeededPlayers();
-      return this.RequiredPlayers = this.CalculateRequiredPlayers();
+      this.RequiredPlayers = this.CalculateRequiredPlayers();
+      return this.RecalcMaxBid();
     };
     return OwnerRecord;
   })();
@@ -254,6 +262,23 @@
     };
     return BidHandler;
   })();
+  BidSetHandler = (function() {
+    __extends(BidSetHandler, HandlerBase);
+    function BidSetHandler(AuctionState) {
+      this.AuctionState = AuctionState;
+    }
+    BidSetHandler.prototype.CanProcess = function(message) {
+      return message.type === 'BID';
+    };
+    BidSetHandler.prototype.Process = function(message) {
+      var player;
+      player = this.AuctionState.PlayerList[message.player];
+      jQuery('#list').jqGrid('setSelection', message.player);
+      jQuery('#player-under-bid').html(player.Name);
+      return uery('#player-bid').html(message.value);
+    };
+    return BidSetHandler;
+  })();
   MessagePipeline = (function() {
     MessagePipeline.messages;
     MessagePipeline.handlers;
@@ -288,6 +313,30 @@
     return MessagePipeline;
   })();
   sam = new MessagePipeline();
+  $(function() {
+    return jQuery('#bid-setter').click(function() {
+      var message;
+      message = {
+        channel: 'activity',
+        message: {
+          type: 'bid-set',
+          value: jQuery('#bid-value').val(),
+          player: jQuery('#admin-select').val()
+        }
+      };
+      return PUBNUB.publish(message);
+    });
+  });
+  PUBNUB.subscribe({
+    channel: 'activity',
+    callback: function(message) {
+      var ret;
+      ret = jQuery("#list").jqGrid('getRowData', message.player);
+      jQuery('#list').jqGrid('setSelection', message.player);
+      jQuery('#player-under-bid').html(ret.Name);
+      return jQuery('#player-bid').html(message.value);
+    }
+  });
   jQuery.ajax({
     url: '/home/AuctionBigGulp',
     dataType: 'json',

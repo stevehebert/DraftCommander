@@ -25,14 +25,17 @@
             caption: 'Players'
         });
 
+        jQuery("#list").jqGrid('filterToolbar', { stringResult: true, searchOnEnter: false });
+
         jQuery("#ownerlist").jqGrid({
             datatype: 'local',
-            colNames: ['Name', 'CurrentFunds', 'PlayersLeft', 'RequiredPlayers', 'NeededPlayers'],
+            colNames: ['Name', 'CurrentFunds', 'MaxBid', 'PlayersLeft', 'RequiredPlayers', 'NeededPlayers'],
             colModel: [
           { name: 'Name', index: 'Name', width: 200, align: 'left' },
-          { name: 'CurrentFunds', index: 'CurrentFunds', width: 50, align: 'left' },
-          { name: 'PlayersLeft', index: 'PlayersLeft', width: 50, align: 'left' },
-          { name: 'RequiredPlayers', index: 'RequiredPlayers', width: 50, align: 'left' },
+          { name: 'CurrentFunds', index: 'CurrentFunds', width: 50, align: 'right' },
+          { name: 'MaxBid', index: 'MaxBid', width: 50, align: 'right' },
+          { name: 'PlayersLeft', index: 'PlayersLeft', width: 50, align: 'right' },
+          { name: 'RequiredPlayers', index: 'RequiredPlayers', width: 50, align: 'right' },
           { name: 'NeededPlayers', index: 'NeededPlayers', width: 50, align: 'left'}],
             loadonce: true,
             width: 750,
@@ -46,25 +49,6 @@
         jQuery("#bidcenter").accordion();
 
         $('.chzn-select').chosen();
-        $('#bid-setter').click(function () {
-            PUBNUB.publish({
-                channel: 'activity',
-                message: { 'type': 'bid-set',
-                    'value': $('#bid-value').val(),
-                    'player': $('#admin-select').val()
-                }
-            });
-        });
-
-        PUBNUB.subscribe({
-            channel: 'activity',
-            callback: function (message) {
-                var ret = jQuery("#list").jqGrid('getRowData', message.player);
-                jQuery('#list').jqGrid('setSelection', message.player);
-                $('#player-under-bid').html(ret.Name);
-                $('#player-bid').html(message.value);
-            }
-        });
 
     }); 
 </script>
