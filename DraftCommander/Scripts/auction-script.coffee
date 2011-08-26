@@ -64,6 +64,21 @@ class PlayerLoadHandler
     for id, record of @AuctionState.PlayerList
       @ProcessRecord grid, record
 
+class PlayerDropListLoader
+  constructor: (@AuctionState) ->
+
+  CanProcess: (message) ->
+    message.type == 'LOAD'
+
+  ProcessRecord: (id, value) ->
+    jQuery('#admin-select').append(jQuery("<option></option>").attr("value", id).text(value.Name))
+
+  Process: (message) ->
+    for id,  value of @AuctionState.PlayerList
+      @ProcessRecord id, value
+    jQuery('.chzn-select').chosen()
+
+
 
 class OwnerRecord
   @Id
@@ -128,8 +143,6 @@ class OwnerRecord
     @RequiredPlayers = @CalculateRequiredPlayers()
     @RecalcMaxBid()
 
-    
-
 class OwnerLoadHandler
   constructor: (@AuctionState) ->
 
@@ -142,7 +155,6 @@ class OwnerLoadHandler
     grid.jqGrid 'addRowData', newRecord.Id, newRecord
 
   Process: (message) ->
-   
     grid = jQuery '#ownerlist'
     @ProcessRecord(grid, record) for id, record of @AuctionState.OwnerList
 
@@ -160,7 +172,6 @@ class BidLoadHandler
 
 
 class OwnerUpdateHandler extends HandlerBase
-  
   constructor: (@AuctionState) ->
 
   CanProcess: (message) ->
@@ -171,6 +182,7 @@ class OwnerUpdateHandler extends HandlerBase
     ownerData.ProcessBid(message)
 
     @SaveOwnerData(message.OwnerId, ownerData)
+
 
 class BidHandler extends HandlerBase
   CanProcess: (message) ->
@@ -186,18 +198,25 @@ class BidHandler extends HandlerBase
     message.OldBid = if ret.BidAmount == '' then 0 else parseInt(ret.BidAmount ? 0)
     ret.BidAmount = message.BidAmount
     @SavePlayerData(message.PlayerId, ret)
+    jQuery('#active-bid-panel').slideUp('slow')
+    alert message.PlayerId
+    jQuery('#admin-select option[value="'+message.PlayerId+'"]').remove()
+    jQuery('#admin-select').trigger('liszt:updated')
+    alert message.PlayerId
 
 class BidSetHandler extends HandlerBase
-  
+
   constructor: (@AuctionState) ->
 
   CanProcess: (message) ->
     message.type == 'BID-SET'
 
   Process: (message) ->
+    jQuery('#active-bid-panel').slideDown('slow')
     player = @AuctionState.PlayerList[message.player]
     jQuery('#player-under-bid').html(player.Name)
     jQuery('#player-bid').html(message.value)
+    
 
 class MessagePipeline
   @messages
@@ -209,6 +228,7 @@ class MessagePipeline
     auctionState = new AuctionState()
     @AddHandler new StateLoadHandler(auctionState)
     @AddHandler new PlayerLoadHandler(auctionState)
+    @AddHandler new PlayerDropListLoader(auctionState)
     @AddHandler new OwnerLoadHandler(auctionState)
     @AddHandler new BidLoadHandler(this, auctionState)
     @AddHandler new BidHandler()
@@ -225,6 +245,7 @@ class MessagePipeline
 sam = new MessagePipeline()
 
 $ ->
+  jQuery('#active-bid-panel').hide()
   jQuery('#bid-setter').click ->
     message = 
       channel: 'activity'

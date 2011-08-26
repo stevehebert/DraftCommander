@@ -46,9 +46,8 @@
             caption: 'Owners'
         });
 
-        jQuery("#bidcenter").accordion();
+        jQuery(".bidcenter").accordion();
 
-        $('.chzn-select').chosen();
 
     }); 
 </script>
@@ -70,33 +69,77 @@
         </div>
     </div>
 </div>
-<br />
-<div id='bidcenter'>
-    <h3>
-        <a href='#'>Active Bid</a></h3>
-    <div>
-        Current Player:
-        <div id='player-under-bid'>
-        </div>
-        Bid Amount:
-        <div id='player-bid'>
-        </div>
-    </div>
+<br /><div class='bidcenter'>
     <h3>
         <a href='#'>Auction Command</a></h3>
-    <div id="admin">
+    <div id="admin" class='auction-command'>
         Auction Control </br>
         <select data-placeholder="Choose a Player..." class="chzn-select" id='admin-select'
             style="width: 350px;">
             <option value=""></option>
-            @foreach (var item in Model.PlayerList)
-            {
-                <option value="@item.Key">@item.Value</option> 
-            }
         </select>
         <br />
         Bid Amount:
         <input type="text" id='bid-value' />
         <input type='button' id='bid-setter' value='Set Current Bid' />
+    </div>
+</div>
+<br />
+<div class='bidcenter' id='active-bid-panel'>
+    <h3>
+        <a href='#'>Active Bid</a></h3>
+    <div class='active-bid'>
+        <div class='active-bid-row'>
+            <div class='active-bid-cell ui-state-default'>
+                <h3>
+                    Current Player</h3>
+            </div>
+            <div class='active-bid-cell ui-state-default'>
+                <h3>
+                    Bid Amount</h3>
+            </div>
+            <div class='active-bid-cell ui-state-default'>
+                <h3>
+                    Position</h3>
+            </div>
+            <div class='active-bid-cell ui-state-default'>
+                <h3>
+                    Team</h3>
+            </div>
+            <div class='active-bid-cell ui-state-default'>
+                <h3>
+                    Rank</h3>
+            </div>
+            <div class='active-bid-cell ui-state-default'>
+                <h3>
+                    Estimate</h3>
+            </div>
+        </div>
+        <div class='active-bid-row'>
+            <div class='active-bid-cell'>
+                <div id='player-under-bid' class='bid-text'>
+                </div>
+            </div>
+            <div class='active-bid-cell'>
+                <div id='player-bid' class='bid-text'>
+                </div>
+            </div>
+            <div class='active-bid-cell'>
+                <div id='player-position' class='bid-text'>
+                </div>
+            </div>
+            <div class='active-bid-cell'>
+                <div id='player-team' class='bid-text'>
+                </div>
+            </div>
+            <div class='active-bid-cell'>
+                <div id='player-rank' class='bid-text'>
+                </div>
+            </div>
+            <div class='active-bid-cell'>
+                <div id='player-estimate' class='bid-text'>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

@@ -343,3 +343,36 @@ div#title
 {
     width: 6em;
 }
+
+.active-bid
+{
+   min-height:10em   
+}
+
+.auction-command
+{
+    min-height:15em
+}
+
+.bid-text
+{
+    text-align:center;
+}
+
+.active-bid
+{
+    display:table;
+}
+
+.active-bid-row
+{
+    display:table-row;
+}
+
+.active-bid-cell
+{
+    display:table-cell;
+    padding-right:2em;
+    text-align:center;
+    background-color: #E8EEF4;
+}

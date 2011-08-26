@@ -1,5 +1,5 @@
 (function() {
-  var AuctionState, BidHandler, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerLoadHandler, StateLoadHandler, sam;
+  var AuctionState, BidHandler, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerDropListLoader, PlayerLoadHandler, StateLoadHandler, sam;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -101,6 +101,27 @@
       return _results;
     };
     return PlayerLoadHandler;
+  })();
+  PlayerDropListLoader = (function() {
+    function PlayerDropListLoader(AuctionState) {
+      this.AuctionState = AuctionState;
+    }
+    PlayerDropListLoader.prototype.CanProcess = function(message) {
+      return message.type === 'LOAD';
+    };
+    PlayerDropListLoader.prototype.ProcessRecord = function(id, value) {
+      return jQuery('#admin-select').append(jQuery("<option></option>").attr("value", id).text(value.Name));
+    };
+    PlayerDropListLoader.prototype.Process = function(message) {
+      var id, value, _ref;
+      _ref = this.AuctionState.PlayerList;
+      for (id in _ref) {
+        value = _ref[id];
+        this.ProcessRecord(id, value);
+      }
+      return jQuery('.chzn-select').chosen();
+    };
+    return PlayerDropListLoader;
   })();
   OwnerRecord = (function() {
     OwnerRecord.Id;
@@ -258,7 +279,12 @@
       ret.Owner = name;
       message.OldBid = ret.BidAmount === '' ? 0 : parseInt((_ref = ret.BidAmount) != null ? _ref : 0);
       ret.BidAmount = message.BidAmount;
-      return this.SavePlayerData(message.PlayerId, ret);
+      this.SavePlayerData(message.PlayerId, ret);
+      jQuery('#active-bid-panel').slideUp('slow');
+      alert(message.PlayerId);
+      jQuery('#admin-select option[value="' + message.PlayerId + '"]').remove();
+      jQuery('#admin-select').trigger('liszt:updated');
+      return alert(message.PlayerId);
     };
     return BidHandler;
   })();
@@ -272,6 +298,7 @@
     };
     BidSetHandler.prototype.Process = function(message) {
       var player;
+      jQuery('#active-bid-panel').slideDown('slow');
       player = this.AuctionState.PlayerList[message.player];
       jQuery('#player-under-bid').html(player.Name);
       return jQuery('#player-bid').html(message.value);
@@ -288,6 +315,7 @@
       auctionState = new AuctionState();
       this.AddHandler(new StateLoadHandler(auctionState));
       this.AddHandler(new PlayerLoadHandler(auctionState));
+      this.AddHandler(new PlayerDropListLoader(auctionState));
       this.AddHandler(new OwnerLoadHandler(auctionState));
       this.AddHandler(new BidLoadHandler(this, auctionState));
       this.AddHandler(new BidHandler());
@@ -314,6 +342,7 @@
   })();
   sam = new MessagePipeline();
   $(function() {
+    jQuery('#active-bid-panel').hide();
     return jQuery('#bid-setter').click(function() {
       var message;
       message = {
