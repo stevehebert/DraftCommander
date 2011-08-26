@@ -1,5 +1,5 @@
 (function() {
-  var AuctionState, BidHandler, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerDropListLoader, PlayerLoadHandler, StateLoadHandler, sam;
+  var AuctionState, BidHandler, BidIncrementer, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerDropListLoader, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerDropListLoader, PlayerLoadHandler, SaleSetHandler, StateLoadHandler, UiInit, sam;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -224,6 +224,27 @@
     };
     return OwnerLoadHandler;
   })();
+  OwnerDropListLoader = (function() {
+    function OwnerDropListLoader(AuctionState) {
+      this.AuctionState = AuctionState;
+    }
+    OwnerDropListLoader.prototype.CanProcess = function(message) {
+      return message.type === 'LOAD';
+    };
+    OwnerDropListLoader.prototype.ProcessRecord = function(id, value) {
+      return jQuery('#owner-select').append(jQuery("<option></option>").attr("value", id).text(value.Name));
+    };
+    OwnerDropListLoader.prototype.Process = function(message) {
+      var id, value, _ref;
+      _ref = this.AuctionState.OwnerData;
+      for (id in _ref) {
+        value = _ref[id];
+        this.ProcessRecord(id, value);
+      }
+      return jQuery('#owner-select').trigger('liszt:updated');
+    };
+    return OwnerDropListLoader;
+  })();
   BidLoadHandler = (function() {
     BidLoadHandler.pipeline;
     function BidLoadHandler(pipeline, AuctionState) {
@@ -281,12 +302,38 @@
       ret.BidAmount = message.BidAmount;
       this.SavePlayerData(message.PlayerId, ret);
       jQuery('#active-bid-panel').slideUp('slow');
-      alert(message.PlayerId);
       jQuery('#admin-select option[value="' + message.PlayerId + '"]').remove();
-      jQuery('#admin-select').trigger('liszt:updated');
-      return alert(message.PlayerId);
+      return jQuery('#admin-select').trigger('liszt:updated');
     };
     return BidHandler;
+  })();
+  SaleSetHandler = (function() {
+    function SaleSetHandler(AuctionState) {
+      this.AuctionState = AuctionState;
+    }
+    SaleSetHandler.prototype.CanProcess = function(message) {
+      return message.type === 'SALE-SET';
+    };
+    SaleSetHandler.prototype.Process = function(message) {
+      var options;
+      options = {
+        autoOpen: false,
+        height: 270,
+        width: 300,
+        modal: true,
+        buttons: {
+          'Verify Sale': function() {
+            return alert('hi');
+          },
+          'Cancel': function() {
+            return jQuery(this).dialog("close");
+          }
+        }
+      };
+      jQuery('#confirm-dialog').dialog(options);
+      return jQuery('#confirm-dialog').dialog("open");
+    };
+    return SaleSetHandler;
   })();
   BidSetHandler = (function() {
     __extends(BidSetHandler, HandlerBase);
@@ -305,6 +352,45 @@
     };
     return BidSetHandler;
   })();
+  BidIncrementer = (function() {
+    function BidIncrementer() {}
+    BidIncrementer.prototype.CanProcess = function(message) {
+      return message.type === 'BID-INC';
+    };
+    BidIncrementer.prototype.Process = function(message) {
+      message = {
+        channel: 'activity',
+        message: {
+          type: 'BID-SET',
+          value: jQuery('#bid-value').val(),
+          player: jQuery('#admin-select').val()
+        }
+      };
+      return PUBNUB.publish(message);
+    };
+    return BidIncrementer;
+  })();
+  UiInit = (function() {
+    function UiInit() {}
+    UiInit.prototype.CanProcess = function(message) {
+      return message.type === 'UI-INIT';
+    };
+    UiInit.prototype.Process = function(message) {
+      jQuery('#active-bid-panel').hide();
+      jQuery('#confirm-dialog').hide();
+      jQuery('#bid-setter').click(function() {
+        return sam.Process({
+          type: 'BID-INC'
+        });
+      });
+      return jQuery('#sale-setter').click(function() {
+        return sam.Process({
+          type: 'SALE-SET'
+        });
+      });
+    };
+    return UiInit;
+  })();
   MessagePipeline = (function() {
     MessagePipeline.messages;
     MessagePipeline.handlers;
@@ -313,14 +399,18 @@
       this.messages = [];
       this.handlers = [];
       auctionState = new AuctionState();
+      this.AddHandler(new UiInit());
+      this.AddHandler(new BidIncrementer());
       this.AddHandler(new StateLoadHandler(auctionState));
       this.AddHandler(new PlayerLoadHandler(auctionState));
       this.AddHandler(new PlayerDropListLoader(auctionState));
       this.AddHandler(new OwnerLoadHandler(auctionState));
+      this.AddHandler(new OwnerDropListLoader(auctionState));
       this.AddHandler(new BidLoadHandler(this, auctionState));
       this.AddHandler(new BidHandler());
       this.AddHandler(new OwnerUpdateHandler(auctionState));
       this.AddHandler(new BidSetHandler(auctionState));
+      this.AddHandler(new SaleSetHandler(auctionState));
     }
     MessagePipeline.prototype.AddHandler = function(handler) {
       this.handlers.push(handler);
@@ -342,32 +432,22 @@
   })();
   sam = new MessagePipeline();
   $(function() {
-    jQuery('#active-bid-panel').hide();
-    return jQuery('#bid-setter').click(function() {
-      var message;
-      message = {
-        channel: 'activity',
-        message: {
-          type: 'BID-SET',
-          value: jQuery('#bid-value').val(),
-          player: jQuery('#admin-select').val()
-        }
-      };
-      return PUBNUB.publish(message);
+    sam.Process({
+      type: 'UI-INIT'
     });
-  });
-  PUBNUB.subscribe({
-    channel: 'activity',
-    callback: function(message) {
-      return sam.Process(message);
-    }
-  });
-  jQuery.ajax({
-    url: '/home/AuctionBigGulp',
-    dataType: 'json',
-    data: 'auctionId=1',
-    success: function(data) {
-      return sam.Process(data);
-    }
+    PUBNUB.subscribe({
+      channel: 'activity',
+      callback: function(message) {
+        return sam.Process(message);
+      }
+    });
+    return jQuery.ajax({
+      url: '/home/AuctionBigGulp',
+      dataType: 'json',
+      data: 'auctionId=1',
+      success: function(data) {
+        return sam.Process(data);
+      }
+    });
   });
 }).call(this);

@@ -80,6 +80,7 @@ class PlayerDropListLoader
 
 
 
+
 class OwnerRecord
   @Id
   @Name
@@ -157,6 +158,20 @@ class OwnerLoadHandler
   Process: (message) ->
     grid = jQuery '#ownerlist'
     @ProcessRecord(grid, record) for id, record of @AuctionState.OwnerList
+ 
+class OwnerDropListLoader
+  constructor: (@AuctionState) ->
+
+  CanProcess: (message) ->
+    message.type == 'LOAD'
+
+  ProcessRecord: (id, value) ->
+    jQuery('#owner-select').append(jQuery("<option></option>").attr("value", id).text(value.Name))
+
+  Process: (message) ->
+    @ProcessRecord(id,value) for id,  value of @AuctionState.OwnerData
+
+    jQuery('#owner-select').trigger('liszt:updated')
 
 class BidLoadHandler
   @pipeline
@@ -198,11 +213,35 @@ class BidHandler extends HandlerBase
     message.OldBid = if ret.BidAmount == '' then 0 else parseInt(ret.BidAmount ? 0)
     ret.BidAmount = message.BidAmount
     @SavePlayerData(message.PlayerId, ret)
+
+    # here we hide the bid panel
     jQuery('#active-bid-panel').slideUp('slow')
-    alert message.PlayerId
+
+    # here we remove the player from the selection list
     jQuery('#admin-select option[value="'+message.PlayerId+'"]').remove()
     jQuery('#admin-select').trigger('liszt:updated')
-    alert message.PlayerId
+
+
+class SaleSetHandler
+  constructor: (@AuctionState) ->
+
+  CanProcess: (message) ->
+    message.type == 'SALE-SET'
+
+  Process: (message) ->
+    options = 
+      autoOpen: false
+      height: 270
+      width: 300
+      modal: true
+      buttons: 
+        'Verify Sale': -> alert 'hi'
+        'Cancel': ->  jQuery( this ).dialog( "close" )
+    jQuery('#confirm-dialog').dialog(options)
+
+    jQuery('#confirm-dialog').dialog("open")
+
+
 
 class BidSetHandler extends HandlerBase
 
@@ -216,7 +255,35 @@ class BidSetHandler extends HandlerBase
     player = @AuctionState.PlayerList[message.player]
     jQuery('#player-under-bid').html(player.Name)
     jQuery('#player-bid').html(message.value)
-    
+
+class BidIncrementer
+  CanProcess: (message) ->
+    message.type == 'BID-INC'
+
+  Process: (message) ->
+    message = 
+      channel: 'activity'
+      message:
+        type: 'BID-SET'
+        value: jQuery('#bid-value').val()
+        player: jQuery('#admin-select').val()
+
+    PUBNUB.publish( message)
+
+class UiInit
+  CanProcess: (message) ->
+    message.type == 'UI-INIT'
+
+  Process: (message) ->
+    jQuery('#active-bid-panel').hide()
+    jQuery('#confirm-dialog').hide()
+
+    jQuery('#bid-setter').click ->
+      sam.Process type: 'BID-INC'
+
+    jQuery('#sale-setter').click ->
+      sam.Process type: 'SALE-SET' 
+
 
 class MessagePipeline
   @messages
@@ -226,14 +293,18 @@ class MessagePipeline
     @messages = []
     @handlers = []
     auctionState = new AuctionState()
+    @AddHandler new UiInit()
+    @AddHandler new BidIncrementer()
     @AddHandler new StateLoadHandler(auctionState)
     @AddHandler new PlayerLoadHandler(auctionState)
     @AddHandler new PlayerDropListLoader(auctionState)
     @AddHandler new OwnerLoadHandler(auctionState)
+    @AddHandler new OwnerDropListLoader(auctionState)
     @AddHandler new BidLoadHandler(this, auctionState)
     @AddHandler new BidHandler()
     @AddHandler new OwnerUpdateHandler(auctionState)
     @AddHandler new BidSetHandler(auctionState)
+    @AddHandler new SaleSetHandler(auctionState)
 
   AddHandler: (handler) ->
     @handlers.push handler
@@ -245,18 +316,10 @@ class MessagePipeline
 sam = new MessagePipeline()
 
 $ ->
-  jQuery('#active-bid-panel').hide()
-  jQuery('#bid-setter').click ->
-    message = 
-      channel: 'activity'
-      message:
-        type: 'BID-SET'
-        value: jQuery('#bid-value').val()
-        player: jQuery('#admin-select').val()
-    PUBNUB.publish( message)
+  sam.Process type: 'UI-INIT'
 
-PUBNUB.subscribe channel: 'activity', callback: (message) ->
-  sam.Process(message)
+  PUBNUB.subscribe channel: 'activity', callback: (message) ->
+    sam.Process message 
 
-jQuery.ajax url:'/home/AuctionBigGulp', dataType:'json', data:'auctionId=1', success: (data) ->
-  sam.Process data
+  jQuery.ajax url:'/home/AuctionBigGulp', dataType:'json', data:'auctionId=1', success: (data) ->
+    sam.Process data

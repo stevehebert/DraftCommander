@@ -69,19 +69,43 @@
         </div>
     </div>
 </div>
-<br /><div class='bidcenter'>
+<br />
+<div class='bidcenter'>
     <h3>
         <a href='#'>Auction Command</a></h3>
     <div id="admin" class='auction-command'>
-        Auction Control </br>
-        <select data-placeholder="Choose a Player..." class="chzn-select" id='admin-select'
-            style="width: 350px;">
-            <option value=""></option>
-        </select>
-        <br />
-        Bid Amount:
-        <input type="text" id='bid-value' />
+        <table>
+            <tr>
+                <td>
+                    Auction Control
+                </td>
+                <td>
+                    <select data-placeholder="Choose a Player..." class="chzn-select" id='admin-select'
+                        style="width: 350px;">
+                        <option value=""></option>
+                    </select>
+                </td>
+                <td>
+                    Owner
+                </td>
+                <td>
+                    <select data-placeholder="Choose an Owner..." class="chzn-select" id='owner-select'
+                        style="width: 350px;">
+                        <option value=""></option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Bid Amount:
+                </td>
+                <td>
+                    <input type="text" id='bid-value' class='ui-corner-all' />
+                </td>
+            </tr>
+        </table>
         <input type='button' id='bid-setter' value='Set Current Bid' />
+        <input type='button' id='sale-setter' value='!! Sold !!' />
     </div>
 </div>
 <br />
@@ -142,4 +166,14 @@
             </div>
         </div>
     </div>
+</div>
+<div id='confirm-dialog' title='Confirm Sale'>
+    <fieldset>
+		<label for="player-name-confirm">Player</label>
+		<input type="text" name="player-name-confirm" id="player-name-confirm" class="text ui-widget-content ui-corner-all" />
+		<label for="player-owner-confirm">Owner</label>
+		<input type="text" name="player-owner-confirm" id="player-owner-confirm" value="" class="text ui-widget-content ui-corner-all" />
+		<label for="player-amount-confirm">Amount</label>
+		<input type="text" name="player-amount-confirm" id="player-amount-confirm" value="" class="text ui-widget-content ui-corner-all" />
+	</fieldset>
 </div>
