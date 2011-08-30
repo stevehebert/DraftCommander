@@ -353,7 +353,7 @@
       }
       error = emptyPlayer || emptyOwner || badBid;
       if (error) {
-        return this.MessageSet(message, error);
+        return this.MessageSet(message, true);
       }
       owner = this.AuctionState.OwnerData[ownerId];
       if (bidValue < this.AuctionState.AuctionRules.MinBid) {
@@ -376,10 +376,19 @@
       return message.type === 'SALE-SET';
     };
     SaleSetHandler.prototype.Process = function(message) {
-      var options;
+      var bidValue, options, ownerId, playerId;
       if (message.error) {
         return;
       }
+      playerId = $('#admin-select').val();
+      ownerId = $('#owner-select').val();
+      bidValue = $('#bid-value').val();
+      $('#player-name-confirm').val(this.AuctionState.PlayerList[playerId].Name);
+      $('#player-owner-confirm').val(this.AuctionState.OwnerData[ownerId].Name);
+      $('#player-amount-confirm').val(bidValue);
+      $('#player-amount-confirm').attr("readonly", true);
+      $('#player-owner-confirm').attr("readonly", true);
+      $('#player-name-confirm').attr("readonly", true);
       options = {
         autoOpen: false,
         height: 270,
@@ -387,7 +396,18 @@
         modal: true,
         buttons: {
           'Verify Sale': function() {
-            return alert('hi');
+            alert(bidValue);
+            message = {
+              channel: 'activity',
+              message: {
+                type: 'BID',
+                PlayerId: playerId,
+                OwnerId: ownerId,
+                BidAmount: bidValue
+              }
+            };
+            PUBNUB.publish(message);
+            return jQuery(this).dialog("close");
           },
           'Cancel': function() {
             return jQuery(this).dialog("close");

@@ -256,7 +256,8 @@ class SaleSetVerifier
 
     error = emptyPlayer || emptyOwner || badBid
 
-    if error then return @MessageSet(message, error) 
+    if error then return @MessageSet(message, true) 
+    
     owner = @AuctionState.OwnerData[ownerId]
 
     if bidValue < @AuctionState.AuctionRules.MinBid
@@ -278,19 +279,38 @@ class SaleSetHandler
   Process: (message) ->
     if message.error then return
 
+    playerId = $('#admin-select').val()
+    ownerId = $('#owner-select').val()
+    bidValue = $('#bid-value').val()
+
+    $('#player-name-confirm').val(@AuctionState.PlayerList[playerId].Name)
+    $('#player-owner-confirm').val(@AuctionState.OwnerData[ownerId].Name)
+    $('#player-amount-confirm').val(bidValue)
+
+    $('#player-amount-confirm').attr("readonly", true); 
+    $('#player-owner-confirm').attr("readonly", true); 
+    $('#player-name-confirm').attr("readonly", true); 
+
     options = 
       autoOpen: false
       height: 270
       width: 300
       modal: true
       buttons: 
-        'Verify Sale': -> alert 'hi'
+        'Verify Sale': -> 
+          alert bidValue
+          message = 
+            channel: 'activity'
+            message:
+              type: 'BID'
+              PlayerId: playerId
+              OwnerId: ownerId
+              BidAmount: bidValue
+          PUBNUB.publish( message)
+          jQuery( this ).dialog( "close" )
         'Cancel': ->  jQuery( this ).dialog( "close" )
     jQuery('#confirm-dialog').dialog(options)
-
     jQuery('#confirm-dialog').dialog("open")
-
-
 
 class BidSetHandler extends HandlerBase
 
