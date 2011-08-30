@@ -1,5 +1,5 @@
 (function() {
-  var AuctionState, BidHandler, BidIncrementer, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerDropListLoader, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerDropListLoader, PlayerLoadHandler, SaleSetHandler, StateLoadHandler, UiInit, sam;
+  var AuctionState, BidHandler, BidIncrementer, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerDropListLoader, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerDropListLoader, PlayerLoadHandler, SaleSetHandler, SaleSetVerifier, StateLoadHandler, UiInit, sam;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -307,6 +307,67 @@
     };
     return BidHandler;
   })();
+  SaleSetVerifier = (function() {
+    function SaleSetVerifier(AuctionState) {
+      this.AuctionState = AuctionState;
+      this.SetError = __bind(this.SetError, this);
+    }
+    SaleSetVerifier.prototype.CanProcess = function(message) {
+      return message.type === 'SALE-SET';
+    };
+    SaleSetVerifier.prototype.MessageSet = function(message, error) {
+      return message.error = error;
+    };
+    SaleSetVerifier.prototype.Clear = function(identifiers) {
+      var identifier, _i, _len, _results;
+      _results = [];
+      for (_i = 0, _len = identifiers.length; _i < _len; _i++) {
+        identifier = identifiers[_i];
+        _results.push(jQuery(identifier).addClass('field-validation-valid').removeClass('field-validation-error'));
+      }
+      return _results;
+    };
+    SaleSetVerifier.prototype.SetError = function(identifier) {
+      return jQuery(identifier).addClass('field-validation-error').removeClass('field-validation-valid');
+    };
+    SaleSetVerifier.prototype.Setup = function() {
+      return this.Clear(['#player_validation', '#owner_validation', '#bid_validation', '#bid_validation_less_than_zero', '#bid_validation_bid_price_too_high']);
+    };
+    SaleSetVerifier.prototype.Process = function(message) {
+      var badBid, bidValue, emptyOwner, emptyPlayer, error, owner, ownerId, playerId;
+      this.Setup();
+      playerId = $('#admin-select').val();
+      ownerId = $('#owner-select').val();
+      bidValue = parseInt($('#bid-value').val());
+      emptyPlayer = playerId === '';
+      emptyOwner = ownerId === '';
+      badBid = isNaN(bidValue);
+      if (emptyPlayer) {
+        this.SetError('#player_validation');
+      }
+      if (emptyOwner) {
+        this.SetError('#owner_validation');
+      }
+      if (badBid) {
+        this.SetError('#bid_validation');
+      }
+      error = emptyPlayer || emptyOwner || badBid;
+      if (error) {
+        return this.MessageSet(message, error);
+      }
+      owner = this.AuctionState.OwnerData[ownerId];
+      if (bidValue < this.AuctionState.AuctionRules.MinBid) {
+        this.SetError('#bid_validation_less_than_zero');
+        return this.MessageSet(message, true);
+      }
+      if (parseInt(owner.MaxBid) < bidValue) {
+        this.SetError('#bid_validation_bid_price_too_high');
+        return this.MessageSet(message, true);
+      }
+      return this.MessageSet(message, false);
+    };
+    return SaleSetVerifier;
+  })();
   SaleSetHandler = (function() {
     function SaleSetHandler(AuctionState) {
       this.AuctionState = AuctionState;
@@ -316,6 +377,9 @@
     };
     SaleSetHandler.prototype.Process = function(message) {
       var options;
+      if (message.error) {
+        return;
+      }
       options = {
         autoOpen: false,
         height: 270,
@@ -410,6 +474,7 @@
       this.AddHandler(new BidHandler());
       this.AddHandler(new OwnerUpdateHandler(auctionState));
       this.AddHandler(new BidSetHandler(auctionState));
+      this.AddHandler(new SaleSetVerifier(auctionState));
       this.AddHandler(new SaleSetHandler(auctionState));
     }
     MessagePipeline.prototype.AddHandler = function(handler) {

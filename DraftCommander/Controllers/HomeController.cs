@@ -21,10 +21,6 @@ namespace DraftCommander.Controllers
 
         public ActionResult Index()
         {
-            var count = 5;
-
-            ViewBag.Message = string.Format("Welcome to DraftCommander with {0} players", count);
-
             return View(_initializationModel);
         }
 

@@ -51,7 +51,6 @@
 
     }); 
 </script>
-<h2>@ViewBag.Message</h2>
 <div id='tabs11'>
     <ul>
         <li><a href='#tabs-1'>Players</a></li>
@@ -84,6 +83,7 @@
                         style="width: 350px;">
                         <option value=""></option>
                     </select>
+                    <div id='player_validation' class='field-validation-valid'>You must select a valid player.</div>
                 </td>
                 <td>
                     Owner
@@ -93,6 +93,7 @@
                         style="width: 350px;">
                         <option value=""></option>
                     </select>
+                    <div id='owner_validation' class='field-validation-valid'>You must select a valid owner.</div>
                 </td>
             </tr>
             <tr>
@@ -101,6 +102,9 @@
                 </td>
                 <td>
                     <input type="text" id='bid-value' class='ui-corner-all' />
+                    <div id='bid_validation' class='field-validation-valid'>Valid bids are numbers.</div>
+                    <div id='bid_validation_less_than_zero' class='field-validation-valid'>Valid bids are numbers must be greater than 0.</div>
+                    <div id='bid_validation_bid_price_too_high' class='field-validation-valid'>This bid price is too high for the owner to afford.</div>
                 </td>
             </tr>
         </table>

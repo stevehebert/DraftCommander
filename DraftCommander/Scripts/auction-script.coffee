@@ -221,6 +221,53 @@ class BidHandler extends HandlerBase
     jQuery('#admin-select option[value="'+message.PlayerId+'"]').remove()
     jQuery('#admin-select').trigger('liszt:updated')
 
+class SaleSetVerifier
+  constructor: (@AuctionState) ->
+
+  CanProcess: (message) ->
+    message.type == 'SALE-SET'
+
+  MessageSet:(message, error) ->
+    message.error = error
+
+  Clear: (identifiers) ->
+    jQuery(identifier).addClass('field-validation-valid').removeClass('field-validation-error') for identifier in identifiers
+
+
+  SetError: (identifier) =>
+    jQuery(identifier).addClass('field-validation-error').removeClass('field-validation-valid')
+
+  Setup: ->
+    @Clear(['#player_validation','#owner_validation','#bid_validation','#bid_validation_less_than_zero','#bid_validation_bid_price_too_high'])
+
+  Process: (message) ->
+    @Setup()
+    playerId = $('#admin-select').val()
+    ownerId = $('#owner-select').val()
+    bidValue = parseInt($('#bid-value').val())
+
+    emptyPlayer = playerId == ''
+    emptyOwner = ownerId == ''
+    badBid = isNaN(bidValue)
+
+    @SetError('#player_validation') if emptyPlayer
+    @SetError('#owner_validation') if emptyOwner
+    @SetError('#bid_validation') if badBid
+
+    error = emptyPlayer || emptyOwner || badBid
+
+    if error then return @MessageSet(message, error) 
+    owner = @AuctionState.OwnerData[ownerId]
+
+    if bidValue < @AuctionState.AuctionRules.MinBid
+      @SetError('#bid_validation_less_than_zero')
+      return @MessageSet(message, true)
+
+    if parseInt(owner.MaxBid) < bidValue
+      @SetError('#bid_validation_bid_price_too_high')
+      return @MessageSet(message, true)
+    
+    @MessageSet(message, false)
 
 class SaleSetHandler
   constructor: (@AuctionState) ->
@@ -229,6 +276,8 @@ class SaleSetHandler
     message.type == 'SALE-SET'
 
   Process: (message) ->
+    if message.error then return
+
     options = 
       autoOpen: false
       height: 270
@@ -304,6 +353,7 @@ class MessagePipeline
     @AddHandler new BidHandler()
     @AddHandler new OwnerUpdateHandler(auctionState)
     @AddHandler new BidSetHandler(auctionState)
+    @AddHandler new SaleSetVerifier(auctionState)
     @AddHandler new SaleSetHandler(auctionState)
 
   AddHandler: (handler) ->
