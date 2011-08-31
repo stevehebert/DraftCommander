@@ -1,6 +1,7 @@
 ﻿using System.Threading;
 using System.Web.Mvc;
 using DraftCommander.Models;
+using Resources;
 
 namespace DraftCommander.Controllers
 {
@@ -29,6 +30,12 @@ namespace DraftCommander.Controllers
             return View();
         }
 
-
+        public JsonResult AddBid(BidDetail bidDetail)
+        {
+            if (_initializationModel.StoreBid(bidDetail))
+                return Json("GOOD", JsonRequestBehavior.DenyGet);
+            else
+                return Json("bad", JsonRequestBehavior.DenyGet);
+        }
     }
 }

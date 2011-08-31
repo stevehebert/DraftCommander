@@ -10,11 +10,11 @@
   };
   AuctionState = (function() {
     function AuctionState() {}
-    AuctionState.OwnerList = [];
-    AuctionState.PlayerList = [];
+    AuctionState.OwnerList;
+    AuctionState.PlayerList;
     AuctionState.AuctionRules;
-    AuctionState.Bids = [];
-    AuctionState.OwnerData = [];
+    AuctionState.Bids;
+    AuctionState.OwnerData;
     AuctionState.prototype.Process = function(message) {
       var bid, record, _i, _j, _k, _len, _len2, _len3, _ref, _ref2, _ref3, _results;
       this.OwnerData = [];
@@ -36,9 +36,19 @@
       _results = [];
       for (_k = 0, _len3 = _ref3.length; _k < _len3; _k++) {
         bid = _ref3[_k];
-        _results.push(this.Bids.push(bid));
+        _results.push(this.Bids[bid.Id] = bid);
       }
       return _results;
+    };
+    AuctionState.prototype.BidsLength = function() {
+      var key, length, value, _len, _ref;
+      length = 0;
+      _ref = this.Bids;
+      for (value = 0, _len = _ref.length; value < _len; value++) {
+        key = _ref[value];
+        length += 1;
+      }
+      return length;
     };
     return AuctionState;
   })();
@@ -284,8 +294,8 @@
   })();
   BidHandler = (function() {
     __extends(BidHandler, HandlerBase);
-    function BidHandler() {
-      BidHandler.__super__.constructor.apply(this, arguments);
+    function BidHandler(AuctionState) {
+      this.AuctionState = AuctionState;
     }
     BidHandler.prototype.CanProcess = function(message) {
       return message.type === 'BID';
@@ -303,7 +313,10 @@
       this.SavePlayerData(message.PlayerId, ret);
       jQuery('#active-bid-panel').slideUp('slow');
       jQuery('#admin-select option[value="' + message.PlayerId + '"]').remove();
-      return jQuery('#admin-select').trigger('liszt:updated');
+      jQuery('#admin-select').trigger('liszt:updated');
+      if (!this.AuctionState.Bids.hasOwnProperty(message.Id)) {
+        return this.AuctionState.Bids[message.Id] = message;
+      }
     };
     return BidHandler;
   })();
@@ -395,20 +408,34 @@
         width: 300,
         modal: true,
         buttons: {
-          'Verify Sale': function() {
-            alert(bidValue);
+          'Verify Sale': __bind(function() {
             message = {
               channel: 'activity',
               message: {
                 type: 'BID',
                 PlayerId: playerId,
                 OwnerId: ownerId,
-                BidAmount: bidValue
+                BidAmount: bidValue,
+                AuctionId: 1,
+                Id: this.AuctionState.BidsLength()
               }
             };
             PUBNUB.publish(message);
-            return jQuery(this).dialog("close");
-          },
+            jQuery.ajax({
+              url: '/home/AddBid',
+              dataType: 'json',
+              type: 'POST',
+              data: message.message,
+              success: function(data) {
+                return alert(data, {
+                  error: function(a, b, c) {
+                    return alert(b);
+                  }
+                });
+              }
+            });
+            return (jQuery('#confirm-dialog')).dialog("close");
+          }, this),
           'Cancel': function() {
             return jQuery(this).dialog("close");
           }
@@ -491,7 +518,7 @@
       this.AddHandler(new OwnerLoadHandler(auctionState));
       this.AddHandler(new OwnerDropListLoader(auctionState));
       this.AddHandler(new BidLoadHandler(this, auctionState));
-      this.AddHandler(new BidHandler());
+      this.AddHandler(new BidHandler(auctionState));
       this.AddHandler(new OwnerUpdateHandler(auctionState));
       this.AddHandler(new BidSetHandler(auctionState));
       this.AddHandler(new SaleSetVerifier(auctionState));

@@ -33,5 +33,11 @@ namespace DraftCommander.Data
             return _mongoDatabase.GetCollection<T>(typeof (T).Name).AsQueryable().Where(predicate);
 
         }
+
+        public bool Write(T item)
+        {
+            _mongoDatabase.GetCollection<T>(typeof (T).Name).Insert(item);
+            return true;
+        }
     }
 }

@@ -1,9 +1,9 @@
 class AuctionState
-  @OwnerList = []
-  @PlayerList = []
+  @OwnerList
+  @PlayerList
   @AuctionRules
-  @Bids = []
-  @OwnerData = []
+  @Bids
+  @OwnerData
 
   Process: (message) ->
     @OwnerData = []
@@ -16,8 +16,13 @@ class AuctionState
     @PlayerList[record.Id] = record for record in message.PlayerData
 
     @Bids = []
-    @Bids.push(bid) for bid in message.BidHistory
+    @Bids[bid.Id] = bid for bid in message.BidHistory
 
+  BidsLength: ->
+    length = 0
+    length +=1 for key, value in @Bids
+    return length
+    
 class HandlerBase
   GetOwnerData: (ownerId) ->
     list = jQuery '#ownerlist'
@@ -77,8 +82,6 @@ class PlayerDropListLoader
     for id,  value of @AuctionState.PlayerList
       @ProcessRecord id, value
     jQuery('.chzn-select').chosen()
-
-
 
 
 class OwnerRecord
@@ -200,6 +203,8 @@ class OwnerUpdateHandler extends HandlerBase
 
 
 class BidHandler extends HandlerBase
+  constructor: (@AuctionState) ->
+
   CanProcess: (message) ->
     message.type == 'BID'
 	
@@ -221,6 +226,9 @@ class BidHandler extends HandlerBase
     jQuery('#admin-select option[value="'+message.PlayerId+'"]').remove()
     jQuery('#admin-select').trigger('liszt:updated')
 
+    #store the bid if it is not local
+
+    (@AuctionState.Bids[message.Id] = message) if ! @AuctionState.Bids.hasOwnProperty(message.Id)
 class SaleSetVerifier
   constructor: (@AuctionState) ->
 
@@ -297,8 +305,7 @@ class SaleSetHandler
       width: 300
       modal: true
       buttons: 
-        'Verify Sale': -> 
-          alert bidValue
+        'Verify Sale': => 
           message = 
             channel: 'activity'
             message:
@@ -306,8 +313,11 @@ class SaleSetHandler
               PlayerId: playerId
               OwnerId: ownerId
               BidAmount: bidValue
+              AuctionId: 1
+              Id: @AuctionState.BidsLength()
           PUBNUB.publish( message)
-          jQuery( this ).dialog( "close" )
+          jQuery.ajax url:'/home/AddBid', dataType:'json', type:'POST', data:message.message, success: (data) -> alert data, error: (a,b,c) -> alert b
+          (jQuery '#confirm-dialog' ).dialog "close" 
         'Cancel': ->  jQuery( this ).dialog( "close" )
     jQuery('#confirm-dialog').dialog(options)
     jQuery('#confirm-dialog').dialog("open")
@@ -370,7 +380,7 @@ class MessagePipeline
     @AddHandler new OwnerLoadHandler(auctionState)
     @AddHandler new OwnerDropListLoader(auctionState)
     @AddHandler new BidLoadHandler(this, auctionState)
-    @AddHandler new BidHandler()
+    @AddHandler new BidHandler(auctionState)
     @AddHandler new OwnerUpdateHandler(auctionState)
     @AddHandler new BidSetHandler(auctionState)
     @AddHandler new SaleSetVerifier(auctionState)

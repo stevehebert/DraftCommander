@@ -10,5 +10,6 @@ namespace Resources
         IQueryable<T> FindAll();
         IEnumerable<T> Query(IMongoQuery mongoQuery);
         IEnumerable<T> Where(Func<T, bool> predicate);
+        bool Write(T Item);
     }
 }
