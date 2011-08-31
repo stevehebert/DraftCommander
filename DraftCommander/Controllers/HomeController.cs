@@ -20,8 +20,10 @@ namespace DraftCommander.Controllers
             return _initializationModel.BigGulp(auctionId, o => Json(o, JsonRequestBehavior.AllowGet));
         }
 
-        public ActionResult Index()
+        public ActionResult Index(string command)
         {
+            ViewData["commander"] = ((command ?? string.Empty) == "SupremeRuler");
+
             return View(_initializationModel);
         }
 

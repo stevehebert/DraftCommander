@@ -14,7 +14,7 @@ class AuctionState
 
     @PlayerList = {}
     @PlayerList[record.Id] = record for record in message.PlayerData
-
+    
     @Bids = []
     @Bids[bid.Id] = bid for bid in message.BidHistory
 
@@ -316,7 +316,7 @@ class SaleSetHandler
               AuctionId: 1
               Id: @AuctionState.BidsLength()
           PUBNUB.publish( message)
-          jQuery.ajax url:'/home/AddBid', dataType:'json', type:'POST', data:message.message, success: (data) -> alert data, error: (a,b,c) -> alert b
+          jQuery.ajax url:'/home/AddBid', dataType:'json', type:'POST', data:message.message, error: (a,b,c) -> alert b
           (jQuery '#confirm-dialog' ).dialog "close" 
         'Cancel': ->  jQuery( this ).dialog( "close" )
     jQuery('#confirm-dialog').dialog(options)
@@ -332,8 +332,12 @@ class BidSetHandler extends HandlerBase
   Process: (message) ->
     jQuery('#active-bid-panel').slideDown('slow')
     player = @AuctionState.PlayerList[message.player]
-    jQuery('#player-under-bid').html(player.Name)
-    jQuery('#player-bid').html(message.value)
+    (jQuery '#player-under-bid').html(player.Name)
+    (jQuery '#player-bid').html(message.value)
+    (jQuery '#player-position').html(player.Position)
+    (jQuery '#player-team').html(player.Team)
+    (jQuery '#player-rank').html(player.Rank)
+    (jQuery '#player-estimate').html(player.Estimate)
 
 class BidIncrementer
   CanProcess: (message) ->
@@ -346,6 +350,7 @@ class BidIncrementer
         type: 'BID-SET'
         value: jQuery('#bid-value').val()
         player: jQuery('#admin-select').val()
+
 
     PUBNUB.publish( message)
 
@@ -363,6 +368,35 @@ class UiInit
     jQuery('#sale-setter').click ->
       sam.Process type: 'SALE-SET' 
 
+    options = 
+      autoOpen: false
+      height: 270
+      width: 300
+      modal: true
+    (jQuery '#launch-dialog').dialog(options)
+    (jQuery '#launch-dialog').dialog("open")
+
+    opts = 
+      lines: 12 
+      length: 7 
+      width: 5 
+      radius: 10 
+      color: '#000' 
+      speed: 1 
+      trail: 100 
+      shadow: true 
+
+    (jQuery "#progress-bar" ).spin(opts)
+			
+		
+
+
+class StopInitDialog
+  CanProcess: (message) ->
+    message.type == 'LOAD'
+
+  Process: (message) ->
+    (jQuery '#launch-dialog' ).dialog "close"
 
 class MessagePipeline
   @messages
@@ -375,6 +409,7 @@ class MessagePipeline
     @AddHandler new UiInit()
     @AddHandler new BidIncrementer()
     @AddHandler new StateLoadHandler(auctionState)
+    @AddHandler new StopInitDialog()
     @AddHandler new PlayerLoadHandler(auctionState)
     @AddHandler new PlayerDropListLoader(auctionState)
     @AddHandler new OwnerLoadHandler(auctionState)

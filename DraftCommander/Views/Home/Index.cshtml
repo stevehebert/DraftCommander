@@ -8,21 +8,23 @@
         jQuery('#tabs11').tabs();
         jQuery("#list").jqGrid({
             datatype: 'local',
-            colNames: ['Id', 'Position', 'Name', 'Team', 'Rank', 'Estimate', 'Owner', 'BidAmount'],
+            colNames: ['Position', 'Name', 'Team', 'Rank', 'Estimate', 'Owner', 'BidAmount'],
             colModel: [
-          { name: 'Id', index: 'Id', width: 40, align: 'left' },
           { name: 'Position', index: 'Position', width: 40, align: 'left' },
           { name: 'Name', index: 'Name', width: 200, align: 'left' },
           { name: 'Team', index: 'Team', width: 50, align: 'left' },
-          { name: 'Rank', index: 'Rank', width: 50, align: 'left' },
-          { name: 'Estimate', index: 'Estimate', width: 50, align: 'left' },
+          { name: 'Rank', index: 'Rank', width: 50, align: 'right', sorttype: 'number' },
+          { name: 'Estimate', index: 'Estimate', width: 50, align: 'right', sorttype: 'number' },
           { name: 'Owner', index: 'Owner', width: 100, align: 'left' },
-          { name: 'BidAmount', index: 'BidAmount', width: 50, align: 'right'}],
+          { name: 'BidAmount', index: 'BidAmount', width: 50, align: 'right', sorttype: 'number'}],
             loadonce: true,
-            sortname: 'Id',
+            rowNum: 1000,
+            sortname: 'Estimate',
             sortorder: "desc",
             imgpath: '/Content/themes/sunny/images',
-            caption: 'Players'
+            caption: 'Players',
+            width:1000,
+            height:500
         });
 
         jQuery("#list").jqGrid('filterToolbar', { stringResult: true, searchOnEnter: false });
@@ -48,9 +50,15 @@
 
         jQuery(".bidcenter").accordion();
 
+        commander = jQuery("#commander-decl").val() == "False"
+        if (commander) {
+            jQuery("#auction-set").hide();
+        }
+
 
     }); 
 </script>
+<input id='commander-decl' type='hidden' value="@ViewData["commander"]" />
 <div id='tabs11'>
     <ul>
         <li><a href='#tabs-1'>Players</a></li>
@@ -69,7 +77,7 @@
     </div>
 </div>
 <br />
-<div class='bidcenter'>
+<div class='bidcenter' id='auction-set'>
     <h3>
         <a href='#'>Auction Command</a></h3>
     <div id="admin" class='auction-command'>
@@ -180,4 +188,7 @@
 		<label for="player-amount-confirm">Amount</label>
 		<input type="text" name="player-amount-confirm" id="player-amount-confirm" value="" class="text ui-widget-content ui-corner-all" />
 	</fieldset>
+</div>
+<div id='launch-dialog' title='Welcome to Draft Commander {wired}'>
+  <div id='progress-bar'></div>
 </div>

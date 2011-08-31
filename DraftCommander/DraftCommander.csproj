@@ -119,6 +119,16 @@
     <Content Include="Content\themes\sunny\jquery-ui-1.8.15.custom.css" />
     <Content Include="Content\ui.jqgrid.css" />
     <Content Include="Global.asax" />
+    <Content Include="JasmineTests\lib\jasmine-1.1.0\jasmine-html.js" />
+    <Content Include="JasmineTests\lib\jasmine-1.1.0\jasmine.css" />
+    <Content Include="JasmineTests\lib\jasmine-1.1.0\jasmine.js" />
+    <Content Include="JasmineTests\lib\jasmine-1.1.0\jasmine_favicon.png" />
+    <Content Include="JasmineTests\SpecRunner.html" />
+    <Content Include="JasmineTests\spec\AuctionStateSpec.js">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>AuctionStateSpec.coffee</DependentUpon>
+    </Content>
     <Content Include="Scripts\auction-script.js">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -166,6 +176,7 @@
     <Content Include="Scripts\jquery-ui-1.8.15.custom.min.js" />
     <Content Include="Scripts\jquery.jqGrid.min.js" />
     <Content Include="Scripts\jquery.jqGrid.src.js" />
+    <Content Include="Scripts\spin.min.js" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
     </Content>
@@ -228,6 +239,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="JasmineTests\lib\jasmine-1.1.0\MIT.LICENSE" />
+    <None Include="JasmineTests\spec\AuctionStateSpec.coffee">
+      <Generator>CoffeeScriptGenerator</Generator>
+      <LastGenOutput>AuctionStateSpec.js</LastGenOutput>
+    </None>
     <None Include="Scripts\auction-script.coffee">
       <Generator>CoffeeScriptGenerator</Generator>
       <LastGenOutput>auction-script.js</LastGenOutput>

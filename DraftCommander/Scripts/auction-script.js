@@ -1,5 +1,5 @@
 (function() {
-  var AuctionState, BidHandler, BidIncrementer, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerDropListLoader, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerDropListLoader, PlayerLoadHandler, SaleSetHandler, SaleSetVerifier, StateLoadHandler, UiInit, sam;
+  var AuctionState, BidHandler, BidIncrementer, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerDropListLoader, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerDropListLoader, PlayerLoadHandler, SaleSetHandler, SaleSetVerifier, StateLoadHandler, StopInitDialog, UiInit, sam;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -426,12 +426,8 @@
               dataType: 'json',
               type: 'POST',
               data: message.message,
-              success: function(data) {
-                return alert(data, {
-                  error: function(a, b, c) {
-                    return alert(b);
-                  }
-                });
+              error: function(a, b, c) {
+                return alert(b);
               }
             });
             return (jQuery('#confirm-dialog')).dialog("close");
@@ -458,8 +454,12 @@
       var player;
       jQuery('#active-bid-panel').slideDown('slow');
       player = this.AuctionState.PlayerList[message.player];
-      jQuery('#player-under-bid').html(player.Name);
-      return jQuery('#player-bid').html(message.value);
+      (jQuery('#player-under-bid')).html(player.Name);
+      (jQuery('#player-bid')).html(message.value);
+      (jQuery('#player-position')).html(player.Position);
+      (jQuery('#player-team')).html(player.Team);
+      (jQuery('#player-rank')).html(player.Rank);
+      return (jQuery('#player-estimate')).html(player.Estimate);
     };
     return BidSetHandler;
   })();
@@ -487,6 +487,7 @@
       return message.type === 'UI-INIT';
     };
     UiInit.prototype.Process = function(message) {
+      var options, opts;
       jQuery('#active-bid-panel').hide();
       jQuery('#confirm-dialog').hide();
       jQuery('#bid-setter').click(function() {
@@ -494,13 +495,42 @@
           type: 'BID-INC'
         });
       });
-      return jQuery('#sale-setter').click(function() {
+      jQuery('#sale-setter').click(function() {
         return sam.Process({
           type: 'SALE-SET'
         });
       });
+      options = {
+        autoOpen: false,
+        height: 270,
+        width: 300,
+        modal: true
+      };
+      (jQuery('#launch-dialog')).dialog(options);
+      (jQuery('#launch-dialog')).dialog("open");
+      opts = {
+        lines: 12,
+        length: 7,
+        width: 5,
+        radius: 10,
+        color: '#000',
+        speed: 1,
+        trail: 100,
+        shadow: true
+      };
+      return (jQuery("#progress-bar")).spin(opts);
     };
     return UiInit;
+  })();
+  StopInitDialog = (function() {
+    function StopInitDialog() {}
+    StopInitDialog.prototype.CanProcess = function(message) {
+      return message.type === 'LOAD';
+    };
+    StopInitDialog.prototype.Process = function(message) {
+      return (jQuery('#launch-dialog')).dialog("close");
+    };
+    return StopInitDialog;
   })();
   MessagePipeline = (function() {
     MessagePipeline.messages;
@@ -513,6 +543,7 @@
       this.AddHandler(new UiInit());
       this.AddHandler(new BidIncrementer());
       this.AddHandler(new StateLoadHandler(auctionState));
+      this.AddHandler(new StopInitDialog());
       this.AddHandler(new PlayerLoadHandler(auctionState));
       this.AddHandler(new PlayerDropListLoader(auctionState));
       this.AddHandler(new OwnerLoadHandler(auctionState));
