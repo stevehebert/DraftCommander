@@ -758,8 +758,8 @@ namespace DataLoader
 
             var collection6 = database.GetCollection<BidDetail>(typeof(BidDetail).Name);
             collection6.RemoveAll();
-            collection6.Insert(new BidDetail { Id = 0, AuctionId = 1, PlayerId = 2, OwnerId = 5, BidAmount = 10 });
-            collection6.Insert(new BidDetail { Id = 1, AuctionId = 1, PlayerId = 5, OwnerId = 4, BidAmount = 5 });
+            //collection6.Insert(new BidDetail { Id = 0, AuctionId = 1, PlayerId = 2, OwnerId = 5, BidAmount = 10 });
+            //collection6.Insert(new BidDetail { Id = 1, AuctionId = 1, PlayerId = 5, OwnerId = 4, BidAmount = 5 });
 
         }
     }

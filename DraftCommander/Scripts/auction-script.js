@@ -1,5 +1,5 @@
 (function() {
-  var AuctionState, BidHandler, BidIncrementer, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerDropListLoader, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerDropListLoader, PlayerLoadHandler, SaleSetHandler, SaleSetVerifier, StateLoadHandler, StopInitDialog, UiInit, sam;
+  var AuctionState, BidHandler, BidIncrementer, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerDropListLoader, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerDropListLoader, PlayerLoadHandler, SaleSetHandler, SaleSetVerifier, StateLoadHandler, StopInitDialog, SubGridCreator, SubGridLoader, UiInit, sam;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -487,7 +487,7 @@
       return message.type === 'UI-INIT';
     };
     UiInit.prototype.Process = function(message) {
-      var options, opts;
+      var opts;
       jQuery('#active-bid-panel').hide();
       jQuery('#confirm-dialog').hide();
       jQuery('#bid-setter').click(function() {
@@ -500,14 +500,6 @@
           type: 'SALE-SET'
         });
       });
-      options = {
-        autoOpen: false,
-        height: 270,
-        width: 300,
-        modal: true
-      };
-      (jQuery('#launch-dialog')).dialog(options);
-      (jQuery('#launch-dialog')).dialog("open");
       opts = {
         lines: 12,
         length: 7,
@@ -518,7 +510,7 @@
         trail: 100,
         shadow: true
       };
-      return (jQuery("#progress-bar")).spin(opts);
+      return (jQuery("#waiting")).spin(opts);
     };
     return UiInit;
   })();
@@ -528,9 +520,89 @@
       return message.type === 'LOAD';
     };
     StopInitDialog.prototype.Process = function(message) {
-      return (jQuery('#launch-dialog')).dialog("close");
+      (jQuery('#waiting')).hide();
+      return (jQuery('#main-app')).slideDown("slow");
     };
     return StopInitDialog;
+  })();
+  SubGridLoader = (function() {
+    function SubGridLoader(AuctionState) {
+      this.AuctionState = AuctionState;
+    }
+    SubGridLoader.prototype.CanProcess = function(message) {
+      return message.type === 'SUBGRID';
+    };
+    SubGridLoader.prototype.AddRow = function(record, message, grid) {
+      var item, player;
+      player = this.AuctionState.PlayerList[record.PlayerId];
+      item = {
+        Id: record.PlayerId,
+        Name: player.Name,
+        Position: player.Position,
+        BidAmount: record.BidAmount,
+        Team: player.Team
+      };
+      return grid.jqGrid('addRowData', record.PlayerId, item);
+    };
+    SubGridLoader.prototype.Process = function(message) {
+      var grid, id, value, _ref, _results;
+      grid = jQuery("#" + message.SubGridId);
+      _ref = this.AuctionState.Bids;
+      _results = [];
+      for (id in _ref) {
+        value = _ref[id];
+        if (parseInt(value.OwnerId) === parseInt(message.Id)) {
+          _results.push(this.AddRow(value, message, grid));
+        }
+      }
+      return _results;
+    };
+    return SubGridLoader;
+  })();
+  SubGridCreator = (function() {
+    function SubGridCreator(AuctionState) {
+      this.AuctionState = AuctionState;
+    }
+    SubGridCreator.prototype.CanProcess = function(message) {
+      return message.type === 'SUBGRID';
+    };
+    SubGridCreator.prototype.Process = function(message) {
+      var subgrid_table_id, value;
+      subgrid_table_id = message.GridId + "_t";
+      message.SubGridId = subgrid_table_id;
+      (jQuery('#' + message.GridId)).html("<table id='" + subgrid_table_id + "' class='scroll'></table>");
+      return (jQuery('#' + subgrid_table_id)).jqGrid({
+        datatype: 'local',
+        colNames: ['Position', 'Name', 'Team', 'Bid Amount'],
+        colModel: [
+          value = {
+            name: 'Position',
+            index: 'Position',
+            width: 60,
+            align: 'left'
+          }, value = {
+            name: 'Name',
+            index: 'Name',
+            width: 200,
+            align: 'left'
+          }, value = {
+            name: 'Team',
+            index: 'Team',
+            width: 60,
+            align: 'left'
+          }, value = {
+            name: 'BidAmount',
+            index: 'BidAmount',
+            width: 90,
+            align: 'right'
+          }
+        ],
+        loadonce: true,
+        rowNum: 1000,
+        imgpath: '/Content/themes/sunny/images'
+      });
+    };
+    return SubGridCreator;
   })();
   MessagePipeline = (function() {
     MessagePipeline.messages;
@@ -554,6 +626,8 @@
       this.AddHandler(new BidSetHandler(auctionState));
       this.AddHandler(new SaleSetVerifier(auctionState));
       this.AddHandler(new SaleSetHandler(auctionState));
+      this.AddHandler(new SubGridCreator(auctionState));
+      this.AddHandler(new SubGridLoader(auctionState));
     }
     MessagePipeline.prototype.AddHandler = function(handler) {
       this.handlers.push(handler);
@@ -574,6 +648,7 @@
     return MessagePipeline;
   })();
   sam = new MessagePipeline();
+  window.pipeline = sam;
   $(function() {
     sam.Process({
       type: 'UI-INIT'

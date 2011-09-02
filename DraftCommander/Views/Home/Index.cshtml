@@ -8,7 +8,7 @@
         jQuery('#tabs11').tabs();
         jQuery("#list").jqGrid({
             datatype: 'local',
-            colNames: ['Position', 'Name', 'Team', 'Rank', 'Estimate', 'Owner', 'BidAmount'],
+            colNames: ['Position', 'Name', 'Team', 'Rank', 'Estimate', 'Owner', 'Bid Amount'],
             colModel: [
           { name: 'Position', index: 'Position', width: 40, align: 'left' },
           { name: 'Name', index: 'Name', width: 200, align: 'left' },
@@ -23,29 +23,39 @@
             sortorder: "desc",
             imgpath: '/Content/themes/sunny/images',
             caption: 'Players',
-            width:1000,
-            height:500
+            width: 1000,
+            height: 500
         });
 
         jQuery("#list").jqGrid('filterToolbar', { stringResult: true, searchOnEnter: false });
 
         jQuery("#ownerlist").jqGrid({
             datatype: 'local',
-            colNames: ['Name', 'CurrentFunds', 'MaxBid', 'PlayersLeft', 'RequiredPlayers', 'NeededPlayers'],
+            colNames: ['Name', 'Current Funds', 'Max Bid', 'Players Left', 'Required Players', 'Needed Players'],
             colModel: [
-          { name: 'Name', index: 'Name', width: 200, align: 'left' },
+          { name: 'Name', index: 'Name', width: 150, align: 'left' },
           { name: 'CurrentFunds', index: 'CurrentFunds', width: 50, align: 'right' },
           { name: 'MaxBid', index: 'MaxBid', width: 50, align: 'right' },
           { name: 'PlayersLeft', index: 'PlayersLeft', width: 50, align: 'right' },
           { name: 'RequiredPlayers', index: 'RequiredPlayers', width: 50, align: 'right' },
-          { name: 'NeededPlayers', index: 'NeededPlayers', width: 50, align: 'left'}],
+          { name: 'NeededPlayers', index: 'NeededPlayers', width: 150, align: 'left'}],
             loadonce: true,
-            width: 750,
+            width: 1000,
             sortname: 'Id',
             sortorder: "desc",
             height: "100%",
             imgpath: '/Content/themes/sunny/images',
-            caption: 'Owners'
+            caption: 'Owners',
+            subGrid: true,
+            subGridRowExpanded: function (subgrid_id, row_id) {
+                var request = {
+                  type: 'SUBGRID',
+                  Id: row_id,
+                  GridId: subgrid_id
+                };
+
+                window.pipeline.Process(request)
+             }
         });
 
         jQuery(".bidcenter").accordion();
@@ -58,137 +68,153 @@
 
     }); 
 </script>
-<input id='commander-decl' type='hidden' value="@ViewData["commander"]" />
-<div id='tabs11'>
-    <ul>
-        <li><a href='#tabs-1'>Players</a></li>
-        <li><a href='#tabs-2'>Owners</a></li></ul>
-    <div id='tabs-1'>
-        <table id="list" class="scroll" cellpadding="0" cellspacing="0">
-        </table>
-        <div id="pager" class="scroll" style="text-align: center;">
-        </div>
-    </div>
-    <div id='tabs-2'>
-        <table id="ownerlist" class="scroll" cellpadding="0" cellspacing="0">
-        </table>
-        <div id="ownerpager" class="scroll" style="text-align: center;">
-        </div>
-    </div>
+<div id='waiting'>
+<h1>Loading</h1>
 </div>
-<br />
-<div class='bidcenter' id='auction-set'>
-    <h3>
-        <a href='#'>Auction Command</a></h3>
-    <div id="admin" class='auction-command'>
-        <table>
-            <tr>
-                <td>
-                    Auction Control
-                </td>
-                <td>
-                    <select data-placeholder="Choose a Player..." class="chzn-select" id='admin-select'
-                        style="width: 350px;">
-                        <option value=""></option>
-                    </select>
-                    <div id='player_validation' class='field-validation-valid'>You must select a valid player.</div>
-                </td>
-                <td>
-                    Owner
-                </td>
-                <td>
-                    <select data-placeholder="Choose an Owner..." class="chzn-select" id='owner-select'
-                        style="width: 350px;">
-                        <option value=""></option>
-                    </select>
-                    <div id='owner_validation' class='field-validation-valid'>You must select a valid owner.</div>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    Bid Amount:
-                </td>
-                <td>
-                    <input type="text" id='bid-value' class='ui-corner-all' />
-                    <div id='bid_validation' class='field-validation-valid'>Valid bids are numbers.</div>
-                    <div id='bid_validation_less_than_zero' class='field-validation-valid'>Valid bids are numbers must be greater than 0.</div>
-                    <div id='bid_validation_bid_price_too_high' class='field-validation-valid'>This bid price is too high for the owner to afford.</div>
-                </td>
-            </tr>
-        </table>
-        <input type='button' id='bid-setter' value='Set Current Bid' />
-        <input type='button' id='sale-setter' value='!! Sold !!' />
-    </div>
-</div>
-<br />
-<div class='bidcenter' id='active-bid-panel'>
-    <h3>
-        <a href='#'>Active Bid</a></h3>
-    <div class='active-bid'>
-        <div class='active-bid-row'>
-            <div class='active-bid-cell ui-state-default'>
-                <h3>
-                    Current Player</h3>
-            </div>
-            <div class='active-bid-cell ui-state-default'>
-                <h3>
-                    Bid Amount</h3>
-            </div>
-            <div class='active-bid-cell ui-state-default'>
-                <h3>
-                    Position</h3>
-            </div>
-            <div class='active-bid-cell ui-state-default'>
-                <h3>
-                    Team</h3>
-            </div>
-            <div class='active-bid-cell ui-state-default'>
-                <h3>
-                    Rank</h3>
-            </div>
-            <div class='active-bid-cell ui-state-default'>
-                <h3>
-                    Estimate</h3>
+<div id='main-app' style="display:none">
+    <input id='commander-decl' type='hidden' value="@ViewData["commander"]" />
+    <div id='tabs11'>
+        <ul>
+            <li><a href='#tabs-1'>Players</a></li>
+            <li><a href='#tabs-2'>Owners</a></li></ul>
+        <div id='tabs-1'>
+            <table id="list" class="scroll" cellpadding="0" cellspacing="0">
+            </table>
+            <div id="pager" class="scroll" style="text-align: center;">
             </div>
         </div>
-        <div class='active-bid-row'>
-            <div class='active-bid-cell'>
-                <div id='player-under-bid' class='bid-text'>
-                </div>
-            </div>
-            <div class='active-bid-cell'>
-                <div id='player-bid' class='bid-text'>
-                </div>
-            </div>
-            <div class='active-bid-cell'>
-                <div id='player-position' class='bid-text'>
-                </div>
-            </div>
-            <div class='active-bid-cell'>
-                <div id='player-team' class='bid-text'>
-                </div>
-            </div>
-            <div class='active-bid-cell'>
-                <div id='player-rank' class='bid-text'>
-                </div>
-            </div>
-            <div class='active-bid-cell'>
-                <div id='player-estimate' class='bid-text'>
-                </div>
+        <div id='tabs-2'>
+            <table id="ownerlist" class="scroll" cellpadding="0" cellspacing="0">
+            </table>
+            <div id="ownerpager" class="scroll" style="text-align: center;">
             </div>
         </div>
     </div>
-</div>
-<div id='confirm-dialog' title='Confirm Sale'>
-    <fieldset>
-		<label for="player-name-confirm">Player</label>
-		<input type="text" name="player-name-confirm" id="player-name-confirm" class="text ui-widget-content ui-corner-all" />
-		<label for="player-owner-confirm">Owner</label>
-		<input type="text" name="player-owner-confirm" id="player-owner-confirm" value="" class="text ui-widget-content ui-corner-all" />
-		<label for="player-amount-confirm">Amount</label>
-		<input type="text" name="player-amount-confirm" id="player-amount-confirm" value="" class="text ui-widget-content ui-corner-all" />
-	</fieldset>
-</div>
-<div id='launch-dialog' title='Welcome to Draft Commander {wired}'>
-  <div id='progress-bar'></div>
+    <br />
+    <div class='bidcenter' id='auction-set'>
+        <h3>
+            <a href='#'>Auction Command</a></h3>
+        <div id="admin" class='auction-command'>
+            <table>
+                <tr>
+                    <td>
+                        Auction Control
+                    </td>
+                    <td>
+                        <select data-placeholder="Choose a Player..." class="chzn-select" id='admin-select'
+                            style="width: 350px;">
+                            <option value=""></option>
+                        </select>
+                        <div id='player_validation' class='field-validation-valid'>
+                            You must select a valid player.</div>
+                    </td>
+                    <td>
+                        Owner
+                    </td>
+                    <td>
+                        <select data-placeholder="Choose an Owner..." class="chzn-select" id='owner-select'
+                            style="width: 350px;">
+                            <option value=""></option>
+                        </select>
+                        <div id='owner_validation' class='field-validation-valid'>
+                            You must select a valid owner.</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Bid Amount:
+                    </td>
+                    <td>
+                        <input type="text" id='bid-value' class='ui-corner-all' />
+                        <div id='bid_validation' class='field-validation-valid'>
+                            Valid bids are numbers.</div>
+                        <div id='bid_validation_less_than_zero' class='field-validation-valid'>
+                            Valid bids are numbers must be greater than 0.</div>
+                        <div id='bid_validation_bid_price_too_high' class='field-validation-valid'>
+                            This bid price is too high for the owner to afford.</div>
+                    </td>
+                </tr>
+            </table>
+            <input type='button' id='bid-setter' value='Set Current Bid' />
+            <input type='button' id='sale-setter' value='!! Sold !!' />
+        </div>
+    </div>
+    <br />
+    <div class='bidcenter' id='active-bid-panel'>
+        <h3>
+            <a href='#'>Active Bid</a></h3>
+        <div class='active-bid'>
+            <div class='active-bid-row'>
+                <div class='active-bid-cell ui-state-default'>
+                    <h3>
+                        Current Player</h3>
+                </div>
+                <div class='active-bid-cell ui-state-default'>
+                    <h3>
+                        Bid Amount</h3>
+                </div>
+                <div class='active-bid-cell ui-state-default'>
+                    <h3>
+                        Position</h3>
+                </div>
+                <div class='active-bid-cell ui-state-default'>
+                    <h3>
+                        Team</h3>
+                </div>
+                <div class='active-bid-cell ui-state-default'>
+                    <h3>
+                        Rank</h3>
+                </div>
+                <div class='active-bid-cell ui-state-default'>
+                    <h3>
+                        Estimate</h3>
+                </div>
+            </div>
+            <div class='active-bid-row'>
+                <div class='active-bid-cell'>
+                    <div id='player-under-bid' class='bid-text'>
+                    </div>
+                </div>
+                <div class='active-bid-cell'>
+                    <div id='player-bid' class='bid-text'>
+                    </div>
+                </div>
+                <div class='active-bid-cell'>
+                    <div id='player-position' class='bid-text'>
+                    </div>
+                </div>
+                <div class='active-bid-cell'>
+                    <div id='player-team' class='bid-text'>
+                    </div>
+                </div>
+                <div class='active-bid-cell'>
+                    <div id='player-rank' class='bid-text'>
+                    </div>
+                </div>
+                <div class='active-bid-cell'>
+                    <div id='player-estimate' class='bid-text'>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id='confirm-dialog' title='Confirm Sale'>
+        <fieldset>
+            <label for="player-name-confirm">
+                Player</label>
+            <input type="text" name="player-name-confirm" id="player-name-confirm" class="text ui-widget-content ui-corner-all" />
+            <label for="player-owner-confirm">
+                Owner</label>
+            <input type="text" name="player-owner-confirm" id="player-owner-confirm" value=""
+                class="text ui-widget-content ui-corner-all" />
+            <label for="player-amount-confirm">
+                Amount</label>
+            <input type="text" name="player-amount-confirm" id="player-amount-confirm" value=""
+                class="text ui-widget-content ui-corner-all" />
+        </fieldset>
+    </div>
+    <div id='launch-dialog' title='Welcome to Draft Commander {wired}'>
+        <div id='progress-bar'>
+        </div>
+    </div>
 </div>

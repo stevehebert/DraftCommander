@@ -198,9 +198,7 @@ class OwnerUpdateHandler extends HandlerBase
   Process: (message) ->
     ownerData = @AuctionState.OwnerData[message.OwnerId]
     ownerData.ProcessBid(message)
-
     @SaveOwnerData(message.OwnerId, ownerData)
-
 
 class BidHandler extends HandlerBase
   constructor: (@AuctionState) ->
@@ -368,15 +366,7 @@ class UiInit
     jQuery('#sale-setter').click ->
       sam.Process type: 'SALE-SET' 
 
-    options = 
-      autoOpen: false
-      height: 270
-      width: 300
-      modal: true
-    (jQuery '#launch-dialog').dialog(options)
-    (jQuery '#launch-dialog').dialog("open")
-
-    opts = 
+    opts =
       lines: 12 
       length: 7 
       width: 5 
@@ -386,7 +376,7 @@ class UiInit
       trail: 100 
       shadow: true 
 
-    (jQuery "#progress-bar" ).spin(opts)
+    (jQuery "#waiting" ).spin(opts)
 			
 		
 
@@ -396,8 +386,66 @@ class StopInitDialog
     message.type == 'LOAD'
 
   Process: (message) ->
-    (jQuery '#launch-dialog' ).dialog "close"
+    (jQuery '#waiting').hide()
+    (jQuery '#main-app').slideDown("slow")
 
+class SubGridLoader
+  constructor: (@AuctionState) ->
+
+  CanProcess: (message) ->
+    message.type == 'SUBGRID'
+
+  AddRow: (record, message, grid) ->
+    player = @AuctionState.PlayerList[record.PlayerId]
+    item = 
+      Id: record.PlayerId
+      Name: player.Name
+      Position: player.Position
+      BidAmount: record.BidAmount
+      Team: player.Team
+    grid.jqGrid 'addRowData', record.PlayerId, item
+
+  Process: (message) ->
+    grid = jQuery "#"+message.SubGridId
+    (@AddRow value, message, grid) for id, value of @AuctionState.Bids when parseInt(value.OwnerId) == parseInt(message.Id)
+
+class SubGridCreator
+  constructor: (@AuctionState) ->
+
+  CanProcess: (message) ->
+    message.type == 'SUBGRID'
+  
+  Process: (message) ->
+    subgrid_table_id = message.GridId + "_t"
+    message.SubGridId = subgrid_table_id
+    (jQuery '#' + message.GridId).html "<table id='"+subgrid_table_id+"' class='scroll'></table>"
+    (jQuery '#' + subgrid_table_id).jqGrid
+      datatype: 'local'
+      colNames: ['Position', 'Name', 'Team', 'Bid Amount']
+      colModel: [ value =
+                    name: 'Position' 
+                    index: 'Position'
+                    width: 60
+                    align: 'left',
+                  value =
+                    name: 'Name'
+                    index: 'Name'
+                    width: 200
+                    align: 'left',
+                  value =
+                    name: 'Team'
+                    index: 'Team'
+                    width: 60
+                    align: 'left',
+                  value =  
+                    name: 'BidAmount'
+                    index: 'BidAmount'
+                    width: 90
+                    align: 'right'
+                ]
+      loadonce: true
+      rowNum: 1000
+      imgpath: '/Content/themes/sunny/images' 
 class MessagePipeline
   @messages
   @handlers
@@ -420,6 +468,8 @@ class MessagePipeline
     @AddHandler new BidSetHandler(auctionState)
     @AddHandler new SaleSetVerifier(auctionState)
     @AddHandler new SaleSetHandler(auctionState)
+    @AddHandler new SubGridCreator(auctionState)
+    @AddHandler new SubGridLoader(auctionState)
 
   AddHandler: (handler) ->
     @handlers.push handler
@@ -429,6 +479,9 @@ class MessagePipeline
     handler.Process(message) for handler in @handlers when handler.CanProcess(message)
 
 sam = new MessagePipeline()
+
+window.pipeline = sam
+
 
 $ ->
   sam.Process type: 'UI-INIT'
