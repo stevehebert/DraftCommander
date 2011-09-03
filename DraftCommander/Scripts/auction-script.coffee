@@ -133,6 +133,20 @@ class OwnerRecord
 
     neededPlayers = '  ' + neededPlayers         
     return neededPlayers
+
+  GetOwnedPlayerInfo: () ->
+    playerInfo = []
+
+    for id, value of @AuctionState.Bids when parseInt(value.OwnerId) == parseInt(@Id)
+      player = @AuctionState.PlayerList[value.PlayerId]
+      item = 
+        Id: player.Id
+        Name: player.Name
+        Position: player.Position
+        BidAmount: value.BidAmount
+        Team: player.Team
+      playerInfo.push item
+    return playerInfo
   
   ProcessBid: (message) ->
     @CurrentFunds -= message.BidAmount
@@ -394,20 +408,13 @@ class SubGridLoader
 
   CanProcess: (message) ->
     message.type == 'SUBGRID'
-
-  AddRow: (record, message, grid) ->
-    player = @AuctionState.PlayerList[record.PlayerId]
-    item = 
-      Id: record.PlayerId
-      Name: player.Name
-      Position: player.Position
-      BidAmount: record.BidAmount
-      Team: player.Team
-    grid.jqGrid 'addRowData', record.PlayerId, item
+  
+  AddRow: (record, grid) ->
+    grid.jqGrid 'addRowData', record.Id, record
 
   Process: (message) ->
     grid = jQuery "#"+message.SubGridId
-    (@AddRow value, message, grid) for id, value of @AuctionState.Bids when parseInt(value.OwnerId) == parseInt(message.Id)
+    (@AddRow item, grid) for id, item of @AuctionState.OwnerData[message.Id].GetOwnedPlayerInfo()
 
 class SubGridCreator
   constructor: (@AuctionState) ->
@@ -445,6 +452,7 @@ class SubGridCreator
                 ]
       loadonce: true
       rowNum: 1000
+      width:750
       imgpath: '/Content/themes/sunny/images' 
 class MessagePipeline
   @messages

@@ -195,6 +195,26 @@
       neededPlayers = '  ' + neededPlayers;
       return neededPlayers;
     };
+    OwnerRecord.prototype.GetOwnedPlayerInfo = function() {
+      var id, item, player, playerInfo, value, _ref;
+      playerInfo = [];
+      _ref = this.AuctionState.Bids;
+      for (id in _ref) {
+        value = _ref[id];
+        if (parseInt(value.OwnerId) === parseInt(this.Id)) {
+          player = this.AuctionState.PlayerList[value.PlayerId];
+          item = {
+            Id: player.Id,
+            Name: player.Name,
+            Position: player.Position,
+            BidAmount: value.BidAmount,
+            Team: player.Team
+          };
+          playerInfo.push(item);
+        }
+      }
+      return playerInfo;
+    };
     OwnerRecord.prototype.ProcessBid = function(message) {
       var player;
       this.CurrentFunds -= message.BidAmount;
@@ -532,28 +552,17 @@
     SubGridLoader.prototype.CanProcess = function(message) {
       return message.type === 'SUBGRID';
     };
-    SubGridLoader.prototype.AddRow = function(record, message, grid) {
-      var item, player;
-      player = this.AuctionState.PlayerList[record.PlayerId];
-      item = {
-        Id: record.PlayerId,
-        Name: player.Name,
-        Position: player.Position,
-        BidAmount: record.BidAmount,
-        Team: player.Team
-      };
-      return grid.jqGrid('addRowData', record.PlayerId, item);
+    SubGridLoader.prototype.AddRow = function(record, grid) {
+      return grid.jqGrid('addRowData', record.Id, record);
     };
     SubGridLoader.prototype.Process = function(message) {
-      var grid, id, value, _ref, _results;
+      var grid, id, item, _ref, _results;
       grid = jQuery("#" + message.SubGridId);
-      _ref = this.AuctionState.Bids;
+      _ref = this.AuctionState.OwnerData[message.Id].GetOwnedPlayerInfo();
       _results = [];
       for (id in _ref) {
-        value = _ref[id];
-        if (parseInt(value.OwnerId) === parseInt(message.Id)) {
-          _results.push(this.AddRow(value, message, grid));
-        }
+        item = _ref[id];
+        _results.push(this.AddRow(item, grid));
       }
       return _results;
     };
@@ -599,6 +608,7 @@
         ],
         loadonce: true,
         rowNum: 1000,
+        width: 750,
         imgpath: '/Content/themes/sunny/images'
       });
     };
