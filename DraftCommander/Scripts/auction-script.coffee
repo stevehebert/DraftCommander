@@ -241,6 +241,32 @@ class BidHandler extends HandlerBase
     #store the bid if it is not local
 
     (@AuctionState.Bids[message.Id] = message) if ! @AuctionState.Bids.hasOwnProperty(message.Id)
+
+class BidHistoryHandler
+  @bidList
+  @AuctionState
+  constructor: (auctionState) ->
+    @bidList = null
+    @AuctionState = auctionState
+
+  CanProcess: (message) ->
+    message.type == 'BID'
+
+  Process: (message) ->
+    player = @AuctionState.PlayerList[message.PlayerId]
+    owner = @AuctionState.OwnerData[message.OwnerId]
+    item =
+      Id: message.Id
+      Name: player.Name
+      Position: player.Position
+      Team: player.Team
+      Owner: owner.Name
+      BidAmount: message.BidAmount
+    #lets move this into a jsLazy implementation
+    if @bidList == null
+      @bidList = jQuery '#bidlist'
+    @bidList.jqGrid 'addRowData', message.Id, item
+
 class SaleSetVerifier
   constructor: (@AuctionState) ->
 
@@ -472,12 +498,13 @@ class MessagePipeline
     @AddHandler new OwnerDropListLoader(auctionState)
     @AddHandler new BidLoadHandler(this, auctionState)
     @AddHandler new BidHandler(auctionState)
+    @AddHandler new BidHistoryHandler(auctionState)
     @AddHandler new OwnerUpdateHandler(auctionState)
     @AddHandler new BidSetHandler(auctionState)
     @AddHandler new SaleSetVerifier(auctionState)
     @AddHandler new SaleSetHandler(auctionState)
     @AddHandler new SubGridCreator(auctionState)
-    @AddHandler new SubGridLoader(auctionState)
+    @AddHandler new SubGridLoader(auctionState) 
 
   AddHandler: (handler) -> 
     @handlers.push handler

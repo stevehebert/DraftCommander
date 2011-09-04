@@ -1,5 +1,5 @@
 (function() {
-  var AuctionState, BidHandler, BidIncrementer, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerDropListLoader, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerDropListLoader, PlayerLoadHandler, SaleSetHandler, SaleSetVerifier, StateLoadHandler, StopInitDialog, SubGridCreator, SubGridLoader, UiInit, sam;
+  var AuctionState, BidHandler, BidHistoryHandler, BidIncrementer, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerDropListLoader, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerDropListLoader, PlayerLoadHandler, SaleSetHandler, SaleSetVerifier, StateLoadHandler, StopInitDialog, SubGridCreator, SubGridLoader, UiInit, sam;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -350,6 +350,35 @@
     };
     return BidHandler;
   })();
+  BidHistoryHandler = (function() {
+    BidHistoryHandler.bidList;
+    BidHistoryHandler.AuctionState;
+    function BidHistoryHandler(auctionState) {
+      this.bidList = null;
+      this.AuctionState = auctionState;
+    }
+    BidHistoryHandler.prototype.CanProcess = function(message) {
+      return message.type === 'BID';
+    };
+    BidHistoryHandler.prototype.Process = function(message) {
+      var item, owner, player;
+      player = this.AuctionState.PlayerList[message.PlayerId];
+      owner = this.AuctionState.OwnerData[message.OwnerId];
+      item = {
+        Id: message.Id,
+        Name: player.Name,
+        Position: player.Position,
+        Team: player.Team,
+        Owner: owner.Name,
+        BidAmount: message.BidAmount
+      };
+      if (this.bidList === null) {
+        this.bidList = jQuery('#bidlist');
+      }
+      return this.bidList.jqGrid('addRowData', message.Id, item);
+    };
+    return BidHistoryHandler;
+  })();
   SaleSetVerifier = (function() {
     function SaleSetVerifier(AuctionState) {
       this.AuctionState = AuctionState;
@@ -642,6 +671,7 @@
       this.AddHandler(new OwnerDropListLoader(auctionState));
       this.AddHandler(new BidLoadHandler(this, auctionState));
       this.AddHandler(new BidHandler(auctionState));
+      this.AddHandler(new BidHistoryHandler(auctionState));
       this.AddHandler(new OwnerUpdateHandler(auctionState));
       this.AddHandler(new BidSetHandler(auctionState));
       this.AddHandler(new SaleSetVerifier(auctionState));
