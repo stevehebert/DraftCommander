@@ -143,24 +143,28 @@
     OwnerRecord.Positions;
     OwnerRecord.MaxBix;
     function OwnerRecord(record, AuctionState) {
-      var position, _i, _len, _ref;
       this.AuctionState = AuctionState;
       this.RecalcMaxBid = __bind(this.RecalcMaxBid, this);
       this.Id = record.Id;
       this.Name = record.OwnerRow.Name;
-      this.CurrentFunds = this.AuctionState.AuctionRules.StartingFunds;
-      this.PlayersLeft = this.AuctionState.AuctionRules.MinPlayerCount;
-      this.Positions = [];
-      _ref = this.AuctionState.AuctionRules.Positions;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        position = _ref[_i];
-        this.Positions[position.Position] = position.Count;
-      }
-      this.AssignedPlayers = [];
+      this.Reset();
       this.RequiredPlayers = this.CalculateRequiredPlayers();
       this.NeededPlayers = this.CalculateNeededPlayers();
       this.RecalcMaxBid();
     }
+    OwnerRecord.prototype.Reset = function() {
+      var position, _i, _len, _ref, _results;
+      this.CurrentFunds = this.AuctionState.AuctionRules.StartingFunds;
+      this.PlayersLeft = this.AuctionState.AuctionRules.MinPlayerCount;
+      this.Positions = [];
+      _ref = this.AuctionState.AuctionRules.Positions;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        position = _ref[_i];
+        _results.push((this.Positions[position.Position] = position.Count));
+      }
+      return _results;
+    };
     OwnerRecord.prototype.RecalcMaxBid = function() {
       return this.MaxBid = this.CurrentFunds - ((this.PlayersLeft - 1) * this.AuctionState.AuctionRules.MinBid);
     };
@@ -216,12 +220,18 @@
       return playerInfo;
     };
     OwnerRecord.prototype.ProcessBid = function(message) {
-      var player;
-      this.CurrentFunds -= message.BidAmount;
-      player = this.AuctionState.PlayerList[message.PlayerId];
-      this.AssignedPlayers[message.PlayerId] = player;
-      this.PlayersLeft -= 1;
-      this.Positions[player.Position] -= 1;
+      var id, player, value, _ref;
+      this.Reset();
+      _ref = this.AuctionState.Bids;
+      for (id in _ref) {
+        value = _ref[id];
+        if (parseInt(value.OwnerId) === parseInt(this.Id)) {
+          this.CurrentFunds -= value.BidAmount;
+          this.PlayersLeft -= 1;
+          player = this.AuctionState.PlayerList[value.PlayerId];
+          this.Positions[player.Position] -= 1;
+        }
+      }
       this.NeededPlayers = this.CalculateNeededPlayers();
       this.RequiredPlayers = this.CalculateRequiredPlayers();
       return this.RecalcMaxBid();

@@ -94,22 +94,23 @@ class OwnerRecord
   @Positions
   @MaxBix
 
+
   constructor: ( record, @AuctionState) ->
     @Id = record.Id
     @Name = record.OwnerRow.Name
-    @CurrentFunds = @AuctionState.AuctionRules.StartingFunds
-    @PlayersLeft = @AuctionState.AuctionRules.MinPlayerCount
 
-    @Positions = []
-
-    for position in @AuctionState.AuctionRules.Positions
-      @Positions[position.Position] = position.Count
-
-    @AssignedPlayers = []
+    @Reset()
 
     @RequiredPlayers = @CalculateRequiredPlayers()
     @NeededPlayers = @CalculateNeededPlayers()
     @RecalcMaxBid()
+
+  Reset: ->
+    @CurrentFunds = @AuctionState.AuctionRules.StartingFunds
+    @PlayersLeft = @AuctionState.AuctionRules.MinPlayerCount
+
+    @Positions = []
+    (@Positions[position.Position] = position.Count) for position in @AuctionState.AuctionRules.Positions
 
   RecalcMaxBid: () =>
     @MaxBid = @CurrentFunds - ((@PlayersLeft - 1) * @AuctionState.AuctionRules.MinBid)
@@ -149,13 +150,12 @@ class OwnerRecord
     return playerInfo
   
   ProcessBid: (message) ->
-    @CurrentFunds -= message.BidAmount
-    player = @AuctionState.PlayerList[message.PlayerId]
-    @AssignedPlayers[message.PlayerId] = player
-    @PlayersLeft -= 1
-
-    @Positions[player.Position] -=1
-
+    @Reset()
+    for id, value of @AuctionState.Bids when parseInt(value.OwnerId) == parseInt(@Id)
+      @CurrentFunds -= value.BidAmount
+      @PlayersLeft -= 1
+      player = @AuctionState.PlayerList[value.PlayerId]
+      @Positions[player.Position] -= 1
 
     @NeededPlayers = @CalculateNeededPlayers()
     @RequiredPlayers = @CalculateRequiredPlayers()
