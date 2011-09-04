@@ -144,7 +144,7 @@ class OwnerRecord
         Id: player.Id
         Name: player.Name
         Position: player.Position
-        BidAmount: value.BidAmount
+        BidAmount: value.BidAmount 
         Team: player.Team
       playerInfo.push item
     return playerInfo
@@ -479,7 +479,7 @@ class MessagePipeline
     @AddHandler new SubGridCreator(auctionState)
     @AddHandler new SubGridLoader(auctionState)
 
-  AddHandler: (handler) ->
+  AddHandler: (handler) -> 
     @handlers.push handler
     return handler
 
