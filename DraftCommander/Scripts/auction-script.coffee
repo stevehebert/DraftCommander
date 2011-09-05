@@ -105,6 +105,13 @@ class OwnerRecord
     @NeededPlayers = @CalculateNeededPlayers()
     @RecalcMaxBid()
 
+  Recalc: ->
+    @Reset()
+
+    @RequiredPlayers = @CalculateRequiredPlayers()
+    @NeededPlayers = @CalculateNeededPlayers()
+    @RecalcMaxBid()
+
   Reset: ->
     @CurrentFunds = @AuctionState.AuctionRules.StartingFunds
     @PlayersLeft = @AuctionState.AuctionRules.MinPlayerCount
@@ -533,6 +540,42 @@ class SubGridCreator
       rowNum: 1000
       width:750
       imgpath: '/Content/themes/sunny/images' 
+
+class BidDeletePlayerHandler extends HandlerBase
+  constructor: (@AuctionState) ->
+  
+  CanProcess: (message) ->
+    message.type == 'BIDDELETE'
+
+  Process: (message) ->
+    bid = @AuctionState.Bids[message.Id]
+    player = @GetPlayerData(bid.PlayerId)
+    player.Owner = ''
+    player.BidAmount = ''
+    @SavePlayerData bid.PlayerId, player
+
+class BidDeleteBidHistoryHandler
+  constructor: (@AuctionState) ->
+
+  CanProcess: (message) ->
+    message.type == 'BIDDELETE'
+
+  Process: (message) ->
+    (jQuery "#bidlist").jqGrid 'delRowData', message.Id
+
+
+class BidDeleteOwnerHandler extends HandlerBase
+  constructor: (@AuctionState) -> 
+
+  CanProcess: (message) ->
+    message.type == 'BIDDELETE'
+
+  Process: (message) ->
+    bid=@AuctionState.Bids[message.Id]
+    ownerData = @AuctionState.OwnerData[bid.OwnerId]
+    ownerData.Recalc()
+    @SaveOwnerData bid.OwnerId, ownerData
+
 class MessagePipeline
   @messages
   @handlers
@@ -560,6 +603,11 @@ class MessagePipeline
     @AddHandler new SubGridCreator(auctionState)
     @AddHandler new SubGridLoader(auctionState) 
     @AddHandler new BidDeleteRequestHandler(auctionState)
+
+    @AddHandler new BidDeletePlayerHandler(auctionState)
+    @AddHandler new BidDeleteBidHistoryHandler(auctionState)
+    @AddHandler new BidDeleteOwnerHandler(auctionState)
+    
     @AuctionState = auctionState
 
   AddHandler: (handler) -> 

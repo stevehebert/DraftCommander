@@ -1,5 +1,5 @@
 (function() {
-  var AuctionState, BidDeleteRequestHandler, BidHandler, BidHistoryHandler, BidIncrementer, BidListSelectHandler, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerDropListLoader, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerDropListLoader, PlayerLoadHandler, SaleSetHandler, SaleSetVerifier, StateLoadHandler, StopInitDialog, SubGridCreator, SubGridLoader, UiInit, sam;
+  var AuctionState, BidDeleteBidHistoryHandler, BidDeleteOwnerHandler, BidDeletePlayerHandler, BidDeleteRequestHandler, BidHandler, BidHistoryHandler, BidIncrementer, BidListSelectHandler, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerDropListLoader, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerDropListLoader, PlayerLoadHandler, SaleSetHandler, SaleSetVerifier, StateLoadHandler, StopInitDialog, SubGridCreator, SubGridLoader, UiInit, sam;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -152,6 +152,12 @@
       this.NeededPlayers = this.CalculateNeededPlayers();
       this.RecalcMaxBid();
     }
+    OwnerRecord.prototype.Recalc = function() {
+      this.Reset();
+      this.RequiredPlayers = this.CalculateRequiredPlayers();
+      this.NeededPlayers = this.CalculateNeededPlayers();
+      return this.RecalcMaxBid();
+    };
     OwnerRecord.prototype.Reset = function() {
       var position, _i, _len, _ref, _results;
       this.CurrentFunds = this.AuctionState.AuctionRules.StartingFunds;
@@ -735,6 +741,53 @@
     };
     return SubGridCreator;
   })();
+  BidDeletePlayerHandler = (function() {
+    __extends(BidDeletePlayerHandler, HandlerBase);
+    function BidDeletePlayerHandler(AuctionState) {
+      this.AuctionState = AuctionState;
+    }
+    BidDeletePlayerHandler.prototype.CanProcess = function(message) {
+      return message.type === 'BIDDELETE';
+    };
+    BidDeletePlayerHandler.prototype.Process = function(message) {
+      var bid, player;
+      bid = this.AuctionState.Bids[message.Id];
+      player = this.GetPlayerData(bid.PlayerId);
+      player.Owner = '';
+      player.BidAmount = '';
+      return this.SavePlayerData(bid.PlayerId, player);
+    };
+    return BidDeletePlayerHandler;
+  })();
+  BidDeleteBidHistoryHandler = (function() {
+    function BidDeleteBidHistoryHandler(AuctionState) {
+      this.AuctionState = AuctionState;
+    }
+    BidDeleteBidHistoryHandler.prototype.CanProcess = function(message) {
+      return message.type === 'BIDDELETE';
+    };
+    BidDeleteBidHistoryHandler.prototype.Process = function(message) {
+      return (jQuery("#bidlist")).jqGrid('delRowData', message.Id);
+    };
+    return BidDeleteBidHistoryHandler;
+  })();
+  BidDeleteOwnerHandler = (function() {
+    __extends(BidDeleteOwnerHandler, HandlerBase);
+    function BidDeleteOwnerHandler(AuctionState) {
+      this.AuctionState = AuctionState;
+    }
+    BidDeleteOwnerHandler.prototype.CanProcess = function(message) {
+      return message.type === 'BIDDELETE';
+    };
+    BidDeleteOwnerHandler.prototype.Process = function(message) {
+      var bid, ownerData;
+      bid = this.AuctionState.Bids[message.Id];
+      ownerData = this.AuctionState.OwnerData[bid.OwnerId];
+      ownerData.Recalc();
+      return this.SaveOwnerData(bid.OwnerId, ownerData);
+    };
+    return BidDeleteOwnerHandler;
+  })();
   MessagePipeline = (function() {
     MessagePipeline.messages;
     MessagePipeline.handlers;
@@ -763,6 +816,9 @@
       this.AddHandler(new SubGridCreator(auctionState));
       this.AddHandler(new SubGridLoader(auctionState));
       this.AddHandler(new BidDeleteRequestHandler(auctionState));
+      this.AddHandler(new BidDeletePlayerHandler(auctionState));
+      this.AddHandler(new BidDeleteBidHistoryHandler(auctionState));
+      this.AddHandler(new BidDeleteOwnerHandler(auctionState));
       this.AuctionState = auctionState;
     }
     MessagePipeline.prototype.AddHandler = function(handler) {
