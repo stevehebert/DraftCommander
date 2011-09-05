@@ -427,8 +427,16 @@ class BidDeleteRequestHandler
     jQuery('#confirm-biddelete-dialog').dialog("open")     
 
 class UiInit
+  @commander
   CanProcess: (message) ->
     message.type == 'UI-INIT'
+
+  IsCommander: ->
+    if @commander == undefined
+      value = (jQuery '#commander-decl').val()
+      @commander = value == 'False'
+
+    return !@commander
 
   Process: (message) ->
     (jQuery '#active-bid-panel').hide()
@@ -441,7 +449,8 @@ class UiInit
     (jQuery '#sale-setter').click ->
       sam.Process type: 'SALE-SET' 
     (jQuery '#bidselect').hide() 
-    
+    if !@IsCommander()
+      (jQuery '#auction-set').hide() 
 
     (jQuery '#bidselect').click ->
       sam.Process type: 'BID-DELETE-REQUEST'
@@ -561,16 +570,13 @@ class BidDeleteDropListHandler
     message.type == 'BIDDELETE'
 
   ProcessRecord: (id, value) ->
-    jQuery('#owner-select').append(jQuery("<option></option>").attr("value", id).text(value.Name))
+    jQuery('#admin-select').append(jQuery("<option></option>").attr("value", id).text(value.Name))
 
   Process: (message) ->
     bid = @AuctionState.Bids[message.Id]
     player = @AuctionState.PlayerList[bid.PlayerId];
-    alert player.Name
-    @ProcessRecord player.Id, player
-    jQuery('#owner-select').trigger('liszt:updated')
-
-
+    @ProcessRecord player.Id, player  
+    jQuery('#admin-select').trigger('liszt:updated')
 
 class BidDeleteBidHistoryHandler
   constructor: (@AuctionState) ->

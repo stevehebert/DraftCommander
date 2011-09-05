@@ -594,8 +594,17 @@
   })();
   UiInit = (function() {
     function UiInit() {}
+    UiInit.commander;
     UiInit.prototype.CanProcess = function(message) {
       return message.type === 'UI-INIT';
+    };
+    UiInit.prototype.IsCommander = function() {
+      var value;
+      if (this.commander === void 0) {
+        value = (jQuery('#commander-decl')).val();
+        this.commander = value === 'False';
+      }
+      return !this.commander;
     };
     UiInit.prototype.Process = function(message) {
       var opts;
@@ -613,6 +622,9 @@
         });
       });
       (jQuery('#bidselect')).hide();
+      if (!this.IsCommander()) {
+        (jQuery('#auction-set')).hide();
+      }
       (jQuery('#bidselect')).click(function() {
         return sam.Process({
           type: 'BID-DELETE-REQUEST'
@@ -767,15 +779,14 @@
       return message.type === 'BIDDELETE';
     };
     BidDeleteDropListHandler.prototype.ProcessRecord = function(id, value) {
-      return jQuery('#owner-select').append(jQuery("<option></option>").attr("value", id).text(value.Name));
+      return jQuery('#admin-select').append(jQuery("<option></option>").attr("value", id).text(value.Name));
     };
     BidDeleteDropListHandler.prototype.Process = function(message) {
       var bid, player;
       bid = this.AuctionState.Bids[message.Id];
       player = this.AuctionState.PlayerList[bid.PlayerId];
-      alert(player.Name);
       this.ProcessRecord(player.Id, player);
-      return jQuery('#owner-select').trigger('liszt:updated');
+      return jQuery('#admin-select').trigger('liszt:updated');
     };
     return BidDeleteDropListHandler;
   })();

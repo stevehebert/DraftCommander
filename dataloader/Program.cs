@@ -11,11 +11,12 @@ namespace DataLoader
         static void Main(string[] args)
         // ReSharper restore UnusedParameter.Local
         {
-            //var server = MongoServer.Create("mongodb://steve.hebert:grandam@staff.mongohq.com:10040/openlocker_db");
-            var server = MongoServer.Create("mongodb://localhost:27017/");
+            var server = MongoServer.Create("mongodb://steve.hebert:grandam@staff.mongohq.com:10040/openlocker_db");
+            //var server = MongoServer.Create("mongodb://localhost:27017/");
             server.CreateDatabaseSettings("openlocker_db");
 
             var database = server.GetDatabase("openlocker_db");
+            database.DropCollection(typeof (BidDetail).Name);
 
             var collection = database.GetCollection<Player>(typeof(Player).Name);
 

@@ -176,7 +176,6 @@
     <Content Include="Scripts\jquery-ui-1.8.15.custom.min.js" />
     <Content Include="Scripts\jquery.jqGrid.min.js" />
     <Content Include="Scripts\jquery.jqGrid.src.js" />
-    <Content Include="Scripts\jquery.tmpl.min.js" />
     <Content Include="Scripts\spin.min.js" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
