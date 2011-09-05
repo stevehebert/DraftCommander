@@ -5,12 +5,12 @@ to use a different color start by replacing all instances of
 ----------------------------------------------------------*/
 body
 {
-    background-color: #8B4513;/*#5c87b2;*/
+    background-color: DarkGray;/*#5c87b2;*/
     font-size: 75%;
     font-family: Verdana, Tahoma, Arial, "Helvetica Neue", Helvetica, Sans-Serif;
     margin: 0;
     padding: 0;
-    color: #696969;
+    color: #A52A2A;
 }
 
 a:link
