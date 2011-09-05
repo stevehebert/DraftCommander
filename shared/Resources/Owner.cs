@@ -1,6 +1,6 @@
 ﻿namespace Resources
 {
-    public class Owner
+    public class Owner : IDataItem
     {
         public int AuctionId { get; set; }
         public int Id { get; set; }

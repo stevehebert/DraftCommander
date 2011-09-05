@@ -1,5 +1,5 @@
 (function() {
-  var AuctionState, BidHandler, BidHistoryHandler, BidIncrementer, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerDropListLoader, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerDropListLoader, PlayerLoadHandler, SaleSetHandler, SaleSetVerifier, StateLoadHandler, StopInitDialog, SubGridCreator, SubGridLoader, UiInit, sam;
+  var AuctionState, BidDeleteRequestHandler, BidHandler, BidHistoryHandler, BidIncrementer, BidListSelectHandler, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerDropListLoader, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerDropListLoader, PlayerLoadHandler, SaleSetHandler, SaleSetVerifier, StateLoadHandler, StopInitDialog, SubGridCreator, SubGridLoader, UiInit, sam;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -540,6 +540,52 @@
     };
     return BidIncrementer;
   })();
+  BidDeleteRequestHandler = (function() {
+    function BidDeleteRequestHandler(AuctionState) {
+      this.AuctionState = AuctionState;
+    }
+    BidDeleteRequestHandler.prototype.CanProcess = function(message) {
+      return message.type === 'BID-DELETE-REQUEST';
+    };
+    BidDeleteRequestHandler.prototype.Process = function(message) {
+      var options;
+      (jQuery('#bid-delete-field')).html(this.AuctionState.BidHistorySelect);
+      options = {
+        autoOpen: false,
+        height: 270,
+        width: 300,
+        modal: true,
+        buttons: {
+          'Yes': __bind(function() {
+            message = {
+              channel: 'activity',
+              message: {
+                type: 'BIDDELETE',
+                Id: this.AuctionState.BidHistorySelect
+              }
+            };
+            PUBNUB.publish(message);
+            jQuery.ajax({
+              url: '/home/DeleteBid',
+              dataType: 'json',
+              type: 'POST',
+              data: message.message,
+              error: function(a, b, c) {
+                return alert(b);
+              }
+            });
+            return (jQuery('#confirm-biddelete-dialog')).dialog("close");
+          }, this),
+          'Cancel': function() {
+            return jQuery('#confirm-biddelete-dialog').dialog("close");
+          }
+        }
+      };
+      jQuery('#confirm-biddelete-dialog').dialog(options);
+      return jQuery('#confirm-biddelete-dialog').dialog("open");
+    };
+    return BidDeleteRequestHandler;
+  })();
   UiInit = (function() {
     function UiInit() {}
     UiInit.prototype.CanProcess = function(message) {
@@ -547,16 +593,23 @@
     };
     UiInit.prototype.Process = function(message) {
       var opts;
-      jQuery('#active-bid-panel').hide();
-      jQuery('#confirm-dialog').hide();
-      jQuery('#bid-setter').click(function() {
+      (jQuery('#active-bid-panel')).hide();
+      (jQuery('#confirm-dialog')).hide();
+      (jQuery('#confirm-biddelete-dialog')).hide();
+      (jQuery('#bid-setter')).click(function() {
         return sam.Process({
           type: 'BID-INC'
         });
       });
-      jQuery('#sale-setter').click(function() {
+      (jQuery('#sale-setter')).click(function() {
         return sam.Process({
           type: 'SALE-SET'
+        });
+      });
+      (jQuery('#bidselect')).hide();
+      (jQuery('#bidselect')).click(function() {
+        return sam.Process({
+          type: 'BID-DELETE-REQUEST'
         });
       });
       opts = {
@@ -572,6 +625,35 @@
       return (jQuery("#waiting")).spin(opts);
     };
     return UiInit;
+  })();
+  BidListSelectHandler = (function() {
+    function BidListSelectHandler(AuctionState) {
+      this.AuctionState = AuctionState;
+      this.commander = null;
+      this.bidbutton = null;
+    }
+    BidListSelectHandler.prototype.CanProcess = function(message) {
+      return message.type === 'BIDSELECT';
+    };
+    BidListSelectHandler.prototype.IsCommander = function() {
+      if (this.commander === null) {
+        this.commander = (jQuery('#commander-decl')).val() !== 'False';
+      }
+      return this.commander;
+    };
+    BidListSelectHandler.prototype.ActivateBidButton = function() {
+      if (this.bidbutton === null) {
+        this.bidbutton = jQuery('#bidselect');
+      }
+      return this.bidbutton.show();
+    };
+    BidListSelectHandler.prototype.Process = function(message) {
+      this.AuctionState.BidHistorySelect = message.Id;
+      if (this.IsCommander()) {
+        return this.ActivateBidButton();
+      }
+    };
+    return BidListSelectHandler;
   })();
   StopInitDialog = (function() {
     function StopInitDialog() {}
@@ -656,12 +738,14 @@
   MessagePipeline = (function() {
     MessagePipeline.messages;
     MessagePipeline.handlers;
+    MessagePipeline.AuctionState;
     function MessagePipeline() {
       var auctionState;
       this.messages = [];
       this.handlers = [];
       auctionState = new AuctionState();
       this.AddHandler(new UiInit());
+      this.AddHandler(new BidListSelectHandler(auctionState));
       this.AddHandler(new BidIncrementer());
       this.AddHandler(new StateLoadHandler(auctionState));
       this.AddHandler(new StopInitDialog());
@@ -678,6 +762,8 @@
       this.AddHandler(new SaleSetHandler(auctionState));
       this.AddHandler(new SubGridCreator(auctionState));
       this.AddHandler(new SubGridLoader(auctionState));
+      this.AddHandler(new BidDeleteRequestHandler(auctionState));
+      this.AuctionState = auctionState;
     }
     MessagePipeline.prototype.AddHandler = function(handler) {
       this.handlers.push(handler);

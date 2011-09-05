@@ -1,8 +1,12 @@
 ﻿namespace Resources
 {
-    public class BidDetail
+    public interface IDataItem
     {
-        public long Id { get; set; }
+        int Id { get; set; }
+    }
+    public class BidDetail : IDataItem
+    {
+        public int Id { get; set; }
         public int OwnerId { get; set; }
         public int AuctionId { get; set; }
         public int PlayerId { get; set; }

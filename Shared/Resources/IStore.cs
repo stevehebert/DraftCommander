@@ -11,5 +11,6 @@ namespace Resources
         IEnumerable<T> Query(IMongoQuery mongoQuery);
         IEnumerable<T> Where(Func<T, bool> predicate);
         bool Write(T Item);
+        bool Delete(T Item);
     }
 }

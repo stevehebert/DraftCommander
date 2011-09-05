@@ -63,26 +63,28 @@
             datatype: 'local',
             colNames: ['Bid Number', 'Player', 'Position', 'Team', 'Owner', 'Bid Amount'],
             colModel: [
-          { name: 'Id', index: 'Id', width: 50, align: 'right' },
+          { name: 'Id', index: 'Id', width: 50, key: true, align: 'right' },
           { name: 'Name', index: 'Name', width: 150, align: 'left' },
           { name: 'Position', index: 'Position', width: 70, align: 'left' },
           { name: 'Team', index: 'Team', width: 50, align: 'left' },
-          { name: 'Owner', index: 'Owner', width: 150, align: 'left'} ,
-          { name: 'BidAmount', index: 'BidAmount', width:100, align: 'right'}],
+          { name: 'Owner', index: 'Owner', width: 150, align: 'left' },
+          { name: 'BidAmount', index: 'BidAmount', width: 100, align: 'right'}],
             loadonce: true,
             width: 1000,
             imgpath: '/Content/themes/sunny/images',
             caption: 'Owners',
+            onSelectRow: function (rowid, selected) {
+                var request = {
+                    type: 'BIDSELECT',
+                    Id: rowid,
+                    Selected: selected
+                };
+                window.pipeline.Process(request);
+            }
         });
         jQuery("#bidlist").jqGrid('filterToolbar', { stringResult: true, searchOnEnter: false });
 
         jQuery(".bidcenter").accordion();
-
-        commander = jQuery("#commander-decl").val() == "False"
-        if (commander) {
-            jQuery("#auction-set").hide();
-        }
-
 
     }); 
 </script>
@@ -95,7 +97,7 @@
     <div id='tabs11'>
         <ul>
             <li><a href='#tabs-1'>Players</a></li>
-            <li><a href='#tabs-2'>Owners</a></li>   
+            <li><a href='#tabs-2'>Owners</a></li>
             <li><a href='#tabs-3'>Bid History</a></li></ul>
         <div id='tabs-1'>
             <table id="list" class="scroll" cellpadding="0" cellspacing="0">
@@ -110,8 +112,10 @@
             </div>
         </div>
         <div id='tabs-3'>
-             <table id="bidlist" class="scroll" cellpadding="0" cellspacing="0">
+            <table id="bidlist" class="scroll" cellpadding="0" cellspacing="0">
             </table>
+            <br />
+            <input type='button' id='bidselect' value='Delete Bid' />
         </div>
     </div>
     <br />
@@ -235,6 +239,11 @@
                 Amount</label>
             <input type="text" name="player-amount-confirm" id="player-amount-confirm" value=""
                 class="text ui-widget-content ui-corner-all" />
+        </fieldset>
+    </div>
+    <div id='confirm-biddelete-dialog' title='Confirm Bid Delete'>
+        <fieldset>
+          Delete Bid #<div id='bid-delete-field'></div>? 
         </fieldset>
     </div>
     <div id='launch-dialog' title='Welcome to Draft Commander {wired}'>

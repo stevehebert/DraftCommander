@@ -1,6 +1,6 @@
 ﻿namespace Resources
 {
-    public class RankingDetail
+    public class RankingDetail : IDataItem
     {
         public int Id { get; set; }
         public int RankingId { get; set; }

@@ -39,5 +39,13 @@ namespace DraftCommander.Controllers
             else
                 return Json("bad", JsonRequestBehavior.DenyGet);
         }
+
+        public JsonResult DeleteBid( BidDeleteDetail bidDeleteDetail)
+        {
+            if (_initializationModel.DeleteBid(bidDeleteDetail))
+                return Json("GOOD", JsonRequestBehavior.DenyGet);
+
+            return Json("bad", JsonRequestBehavior.DenyGet);
+        }
     }
 }

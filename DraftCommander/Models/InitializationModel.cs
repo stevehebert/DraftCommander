@@ -26,6 +26,11 @@ namespace DraftCommander.Models
             return _bidCollection.Write(bidDetail);
         }
 
+        public bool DeleteBid(BidDeleteDetail bidDeleteDetail)
+        {
+            return _bidCollection.Delete(new BidDetail {Id = bidDeleteDetail.Id});
+        }
+
         private IEnumerable<PlayerRow> GetPlayerRows(int auctionId)
         {
             var items = (from p in _playerCollection.AsQueryable()

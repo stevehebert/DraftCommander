@@ -359,13 +359,13 @@ class SaleSetHandler
         'Cancel': ->  jQuery( this ).dialog( "close" )
     jQuery('#confirm-dialog').dialog(options)
     jQuery('#confirm-dialog').dialog("open")
-
+    
 class BidSetHandler extends HandlerBase
 
   constructor: (@AuctionState) ->
 
   CanProcess: (message) ->
-    message.type == 'BID-SET'
+    message.type == 'BID-SET' 
 
   Process: (message) ->
     jQuery('#active-bid-panel').slideDown('slow')
@@ -390,21 +390,54 @@ class BidIncrementer
         player: jQuery('#admin-select').val()
 
 
-    PUBNUB.publish( message)
+    PUBNUB.publish( message) 
+
+class BidDeleteRequestHandler
+  constructor: (@AuctionState) ->
+  
+  CanProcess: (message) ->
+    message.type == 'BID-DELETE-REQUEST'
+
+  Process: (message) ->
+    (jQuery '#bid-delete-field').html @AuctionState.BidHistorySelect
+    options = 
+      autoOpen: false
+      height: 270
+      width: 300
+      modal: true
+      buttons: 
+        'Yes': => 
+          message = 
+            channel: 'activity'
+            message:
+              type: 'BIDDELETE'
+              Id: @AuctionState.BidHistorySelect
+          PUBNUB.publish( message)
+          jQuery.ajax url:'/home/DeleteBid', dataType:'json', type:'POST', data:message.message, error: (a,b,c) ->alert b
+          (jQuery '#confirm-biddelete-dialog' ).dialog "close" 
+        'Cancel': ->  jQuery( '#confirm-biddelete-dialog' ).dialog( "close" )
+    jQuery('#confirm-biddelete-dialog').dialog(options)
+    jQuery('#confirm-biddelete-dialog').dialog("open")     
 
 class UiInit
   CanProcess: (message) ->
     message.type == 'UI-INIT'
 
   Process: (message) ->
-    jQuery('#active-bid-panel').hide()
-    jQuery('#confirm-dialog').hide()
+    (jQuery '#active-bid-panel').hide()
+    (jQuery '#confirm-dialog').hide() 
+    (jQuery '#confirm-biddelete-dialog').hide()
 
-    jQuery('#bid-setter').click ->
+    (jQuery '#bid-setter').click ->
       sam.Process type: 'BID-INC'
 
-    jQuery('#sale-setter').click ->
+    (jQuery '#sale-setter').click ->
       sam.Process type: 'SALE-SET' 
+    (jQuery '#bidselect').hide() 
+    
+
+    (jQuery '#bidselect').click ->
+      sam.Process type: 'BID-DELETE-REQUEST'
 
     opts =
       lines: 12 
@@ -419,7 +452,27 @@ class UiInit
     (jQuery "#waiting" ).spin(opts)
 			
 		
+class BidListSelectHandler
+  constructor: (@AuctionState) ->
+    @commander = null
+    @bidbutton = null
 
+  CanProcess: (message) ->
+    message.type == 'BIDSELECT'
+  
+  IsCommander: ->
+    if @commander == null
+      @commander = (jQuery '#commander-decl').val() != 'False'
+    return @commander
+
+  ActivateBidButton: ->
+    if @bidbutton == null
+      @bidbutton = jQuery '#bidselect'
+    @bidbutton.show()
+
+  Process: (message) ->
+    @AuctionState.BidHistorySelect = message.Id
+    @ActivateBidButton() if @IsCommander()
 
 class StopInitDialog
   CanProcess: (message) ->
@@ -483,12 +536,13 @@ class SubGridCreator
 class MessagePipeline
   @messages
   @handlers
-
+  @AuctionState
   constructor: ->
     @messages = []
     @handlers = []
     auctionState = new AuctionState()
     @AddHandler new UiInit()
+    @AddHandler new BidListSelectHandler(auctionState)
     @AddHandler new BidIncrementer()
     @AddHandler new StateLoadHandler(auctionState)
     @AddHandler new StopInitDialog()
@@ -505,6 +559,8 @@ class MessagePipeline
     @AddHandler new SaleSetHandler(auctionState)
     @AddHandler new SubGridCreator(auctionState)
     @AddHandler new SubGridLoader(auctionState) 
+    @AddHandler new BidDeleteRequestHandler(auctionState)
+    @AuctionState = auctionState
 
   AddHandler: (handler) -> 
     @handlers.push handler

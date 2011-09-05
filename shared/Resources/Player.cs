@@ -1,6 +1,6 @@
 ﻿namespace Resources
 {
-    public class Player
+    public class Player : IDataItem
     {
         public int Id { get; set; }
         public string Name { get; set; }
