@@ -554,6 +554,24 @@ class BidDeletePlayerHandler extends HandlerBase
     player.BidAmount = ''
     @SavePlayerData bid.PlayerId, player
 
+class BidDeleteDropListHandler
+  constructor: (@AuctionState) ->
+
+  CanProcess: (message) ->
+    message.type == 'BIDDELETE'
+
+  ProcessRecord: (id, value) ->
+    jQuery('#owner-select').append(jQuery("<option></option>").attr("value", id).text(value.Name))
+
+  Process: (message) ->
+    bid = @AuctionState.Bids[message.Id]
+    player = @AuctionState.PlayerList[bid.PlayerId];
+    alert player.Name
+    @ProcessRecord player.Id, player
+    jQuery('#owner-select').trigger('liszt:updated')
+
+
+
 class BidDeleteBidHistoryHandler
   constructor: (@AuctionState) ->
 
@@ -607,7 +625,8 @@ class MessagePipeline
     @AddHandler new BidDeletePlayerHandler(auctionState)
     @AddHandler new BidDeleteBidHistoryHandler(auctionState)
     @AddHandler new BidDeleteOwnerHandler(auctionState)
-    
+    @AddHandler new BidDeleteDropListHandler(auctionState)
+
     @AuctionState = auctionState
 
   AddHandler: (handler) -> 

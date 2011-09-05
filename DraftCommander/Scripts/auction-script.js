@@ -1,5 +1,5 @@
 (function() {
-  var AuctionState, BidDeleteBidHistoryHandler, BidDeleteOwnerHandler, BidDeletePlayerHandler, BidDeleteRequestHandler, BidHandler, BidHistoryHandler, BidIncrementer, BidListSelectHandler, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerDropListLoader, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerDropListLoader, PlayerLoadHandler, SaleSetHandler, SaleSetVerifier, StateLoadHandler, StopInitDialog, SubGridCreator, SubGridLoader, UiInit, sam;
+  var AuctionState, BidDeleteBidHistoryHandler, BidDeleteDropListHandler, BidDeleteOwnerHandler, BidDeletePlayerHandler, BidDeleteRequestHandler, BidHandler, BidHistoryHandler, BidIncrementer, BidListSelectHandler, BidLoadHandler, BidSetHandler, HandlerBase, MessagePipeline, OwnerDropListLoader, OwnerLoadHandler, OwnerRecord, OwnerUpdateHandler, PlayerDropListLoader, PlayerLoadHandler, SaleSetHandler, SaleSetVerifier, StateLoadHandler, StopInitDialog, SubGridCreator, SubGridLoader, UiInit, sam;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -759,6 +759,26 @@
     };
     return BidDeletePlayerHandler;
   })();
+  BidDeleteDropListHandler = (function() {
+    function BidDeleteDropListHandler(AuctionState) {
+      this.AuctionState = AuctionState;
+    }
+    BidDeleteDropListHandler.prototype.CanProcess = function(message) {
+      return message.type === 'BIDDELETE';
+    };
+    BidDeleteDropListHandler.prototype.ProcessRecord = function(id, value) {
+      return jQuery('#owner-select').append(jQuery("<option></option>").attr("value", id).text(value.Name));
+    };
+    BidDeleteDropListHandler.prototype.Process = function(message) {
+      var bid, player;
+      bid = this.AuctionState.Bids[message.Id];
+      player = this.AuctionState.PlayerList[bid.PlayerId];
+      alert(player.Name);
+      this.ProcessRecord(player.Id, player);
+      return jQuery('#owner-select').trigger('liszt:updated');
+    };
+    return BidDeleteDropListHandler;
+  })();
   BidDeleteBidHistoryHandler = (function() {
     function BidDeleteBidHistoryHandler(AuctionState) {
       this.AuctionState = AuctionState;
@@ -819,6 +839,7 @@
       this.AddHandler(new BidDeletePlayerHandler(auctionState));
       this.AddHandler(new BidDeleteBidHistoryHandler(auctionState));
       this.AddHandler(new BidDeleteOwnerHandler(auctionState));
+      this.AddHandler(new BidDeleteDropListHandler(auctionState));
       this.AuctionState = auctionState;
     }
     MessagePipeline.prototype.AddHandler = function(handler) {
