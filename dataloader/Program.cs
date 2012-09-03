@@ -11,12 +11,14 @@ namespace DataLoader
         static void Main(string[] args)
         // ReSharper restore UnusedParameter.Local
         {
-            var server = MongoServer.Create("mongodb://steve.hebert:grandam@staff.mongohq.com:10040/openlocker_db");
+            var server = MongoServer.Create("mongodb://steve.hebert:grandam@vincent.mongohq.com:10062/openlocker_db");
             //var server = MongoServer.Create("mongodb://localhost:27017/");
             server.CreateDatabaseSettings("openlocker_db");
 
             var database = server.GetDatabase("openlocker_db");
-            database.DropCollection(typeof (BidDetail).Name);
+            //database.CreateCollection(typeof (BidDetail).Name);
+            //database.CreateCollection(typeof(Player).Name);
+            //database.DropCollection(typeof (BidDetail).Name);
 
             var collection = database.GetCollection<Player>(typeof(Player).Name);
 
@@ -510,7 +512,7 @@ collection5.Insert(new RankingDetail { Id = 129, RankingId = 1, PlayerId = 129, 
 collection5.Insert(new RankingDetail { Id = 130, RankingId = 1, PlayerId = 130, Estimate = 2, Rank = 145 });
 collection5.Insert(new RankingDetail { Id = 131, RankingId = 1, PlayerId = 131, Estimate = 3, Rank = 155 });
 collection5.Insert(new RankingDetail { Id = 132, RankingId = 1, PlayerId = 132, Estimate = 2, Rank = 116 });
-collection5.Insert(new RankingDetail { Id = 133, RankingId = 1, PlayerId = 133, Estimate = , Rank = 184 });
+collection5.Insert(new RankingDetail { Id = 133, RankingId = 1, PlayerId = 133, Estimate = 1 , Rank = 184 });
 collection5.Insert(new RankingDetail { Id = 134, RankingId = 1, PlayerId = 134, Estimate = 3, Rank = 137 });
 collection5.Insert(new RankingDetail { Id = 135, RankingId = 1, PlayerId = 135, Estimate = 2, Rank = 154 });
 collection5.Insert(new RankingDetail { Id = 136, RankingId = 1, PlayerId = 136, Estimate = 3, Rank = 153 });

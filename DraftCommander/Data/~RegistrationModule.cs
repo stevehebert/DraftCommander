@@ -10,7 +10,7 @@ namespace DraftCommander.Data
         {
             builder.RegisterInstance(
                 //MongoServer.Create("mongodb://localhost:27017/")).
-                MongoServer.Create("mongodb://steve.hebert:grandam@staff.mongohq.com:10040/openlocker_db")).
+                MongoServer.Create("mongodb://steve.hebert:grandam@vincent.mongohq.com:10062/openlocker_db")).
                 SingleInstance();
 
             builder.Register(c => c.Resolve<MongoServer>().GetDatabase("openlocker_db")).SingleInstance();
